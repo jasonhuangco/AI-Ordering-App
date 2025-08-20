@@ -1,0 +1,92 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
+import { prisma } from '@/lib/prisma'
+
+export async function GET() {
+  try {
+    const session = await getServerSession(authOptions)
+    
+    if (!session || session.user.role !== 'ADMIN') {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    const settings = await prisma.reminderSettings.findFirst()
+    
+    if (!settings) {
+      // Create default settings if none exist
+      const defaultSettings = await prisma.reminderSettings.create({
+        data: {
+          dayOfWeek: 1, // Monday
+          hour: 9, // 9 AM
+          isActive: true,
+          emailEnabled: true,
+          smsEnabled: false,
+        }
+      })
+      return NextResponse.json(defaultSettings)
+    }
+
+    return NextResponse.json(settings)
+  } catch (error) {
+    console.error('Error fetching settings:', error)
+    return NextResponse.json(
+      { error: 'Failed to fetch settings' },
+      { status: 500 }
+    )
+  }
+}
+
+export async function PUT(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions)
+    
+    if (!session || session.user.role !== 'ADMIN') {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    const body = await request.json()
+    const { dayOfWeek, hour, isActive, emailEnabled, smsEnabled } = body
+
+    // Find the first (and should be only) settings record
+    const existingSettings = await prisma.reminderSettings.findFirst()
+
+    let settings
+    if (existingSettings) {
+      settings = await prisma.reminderSettings.update({
+        where: { id: existingSettings.id },
+        data: {
+          dayOfWeek,
+          hour,
+          isActive,
+          emailEnabled,
+          smsEnabled,
+        }
+      })
+    } else {
+      settings = await prisma.reminderSettings.create({
+        data: {
+          dayOfWeek,
+          hour,
+          isActive,
+          emailEnabled,
+          smsEnabled,
+        }
+      })
+    }
+
+    return NextResponse.json(settings)
+  } catch (error) {
+    console.error('Error updating settings:', error)
+    return NextResponse.json(
+      { error: 'Failed to update settings' },
+      { status: 500 }
+    )
+  }
+}

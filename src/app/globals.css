@@ -1,0 +1,77 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&family=Montserrat:wght@400;500;600;700;800&family=Dancing+Script:wght@400;500;600;700&family=Open+Sans:wght@300;400;500;600;700&display=swap');
+
+:root {
+  /* Font families */
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-serif: 'Playfair Display', serif;
+  --font-heading: 'Montserrat', sans-serif;
+  --font-brand: 'Dancing Script', cursive;
+  --font-body: 'Open Sans', sans-serif;
+  
+  /* Static CSS variables */
+  --coffee-brown: #8B4513;
+  --coffee-light: #D2B48C;
+  --coffee-dark: #4A2C17;
+  --cream: #F5F5DC;
+  --espresso: #3C2415;
+  --warm-gold: #DAA520;
+  
+  /* Dynamic branding variables (can be updated by JS) */
+  --color-primary: #8B4513;
+  --color-secondary: #D2B48C;
+  --color-accent: #DAA520;
+  --font-family-primary: 'Inter', system-ui, sans-serif;
+  --company-name: 'Roaster Ordering';
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  body {
+    font-feature-settings: 'rlig' 1, 'calt' 1;
+  }
+}
+
+@layer components {
+  /* Custom button styles */
+  .btn-coffee {
+    @apply bg-coffee-brown text-white px-6 py-3 rounded-lg font-heading font-semibold transition-all duration-200 hover:bg-coffee-dark focus:outline-none focus:ring-2 focus:ring-warm-gold;
+  }
+  
+  .btn-coffee-outline {
+    @apply border-2 border-coffee-brown text-coffee-brown px-6 py-3 rounded-lg font-heading font-semibold transition-all duration-200 hover:bg-coffee-brown hover:text-white focus:outline-none focus:ring-2 focus:ring-warm-gold;
+  }
+
+  /* Custom card styles */
+  .card-coffee {
+    @apply bg-white rounded-coffee shadow-coffee p-6 border border-coffee-light/20;
+  }
+
+  /* Text styles */
+  .text-brand {
+    @apply font-brand text-coffee-brown;
+  }
+  
+  .text-heading {
+    @apply font-heading font-semibold text-coffee-dark;
+  }
+}
+
+/* Custom coffee-themed styling */
+.coffee-gradient {
+  background: linear-gradient(135deg, #8B4513 0%, #A0522D 50%, #D2B48C 100%);
+}
+
+.btn-primary {
+  @apply bg-coffee-brown hover:bg-coffee-dark text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200;
+}
+
+.btn-secondary {
+  @apply bg-coffee-light hover:bg-roast text-coffee-dark font-medium py-2 px-4 rounded-lg transition-colors duration-200;
+}

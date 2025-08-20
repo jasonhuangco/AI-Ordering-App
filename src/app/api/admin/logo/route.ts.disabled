@@ -1,0 +1,122 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
+import { PrismaClient } from '@prisma/client'
+import { writeFile, mkdir } from 'fs/promises'
+import { join } from 'path'
+
+const prisma = new PrismaClient()
+
+export async function POST(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions)
+    
+    if (!session || session.user.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const data = await request.formData()
+    const file: File | null = data.get('logo') as unknown as File
+
+    if (!file) {
+      return NextResponse.json({ error: 'No file uploaded' }, { status: 400 })
+    }
+
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml']
+    if (!allowedTypes.includes(file.type)) {
+      return NextResponse.json({ error: 'Invalid file type. Please upload an image file.' }, { status: 400 })
+    }
+
+    // Validate file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024 // 5MB
+    if (file.size > maxSize) {
+      return NextResponse.json({ error: 'File too large. Maximum size is 5MB.' }, { status: 400 })
+    }
+
+    const bytes = await file.arrayBuffer()
+    const buffer = Buffer.from(bytes)
+
+    // Generate unique filename
+    const timestamp = Date.now()
+    const fileExtension = file.name.split('.').pop() || 'png'
+    const filename = `logo-${timestamp}.${fileExtension}`
+    
+    // Ensure uploads directory exists
+    const uploadDir = join(process.cwd(), 'public', 'uploads')
+    try {
+      await mkdir(uploadDir, { recursive: true })
+    } catch (error) {
+      // Directory might already exist, ignore error
+    }
+    
+    const filePath = join(uploadDir, filename)
+    
+    // Write the file
+    await writeFile(filePath, buffer)
+    
+    // Update branding settings in database
+    const logoUrl = `/uploads/${filename}`
+    
+    const existingBranding = await prisma.brandingSettings.findFirst()
+    
+    if (existingBranding) {
+      await prisma.brandingSettings.update({
+        where: { id: existingBranding.id },
+        data: { logoUrl }
+      })
+    } else {
+      await prisma.brandingSettings.create({
+        data: {
+          companyName: 'Roaster Ordering',
+          primaryColor: '#8B4513',
+          secondaryColor: '#D2B48C',
+          accentColor: '#DAA520',
+          fontFamily: 'Inter',
+          backgroundColor: '#F5F5DC',
+          buttonColor: '#8B4513',
+          logoUrl
+        }
+      })
+    }
+
+    return NextResponse.json({ 
+      message: 'Logo uploaded successfully',
+      logoUrl 
+    })
+  } catch (error) {
+    console.error('Logo upload error:', error)
+    return NextResponse.json(
+      { error: 'Failed to upload logo' },
+      { status: 500 }
+    )
+  }
+}
+
+export async function DELETE() {
+  try {
+    const session = await getServerSession(authOptions)
+    
+    if (!session || session.user.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Remove logo from branding settings
+    const existingBranding = await prisma.brandingSettings.findFirst()
+    
+    if (existingBranding) {
+      await prisma.brandingSettings.update({
+        where: { id: existingBranding.id },
+        data: { logoUrl: null }
+      })
+    }
+
+    return NextResponse.json({ message: 'Logo removed successfully' })
+  } catch (error) {
+    console.error('Logo removal error:', error)
+    return NextResponse.json(
+      { error: 'Failed to remove logo' },
+      { status: 500 }
+    )
+  }
+}
