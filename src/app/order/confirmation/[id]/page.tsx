@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { generateOrderNumberWithSequence } from '../../../../lib/orderUtils'
+import { useBranding } from '../../../../components/BrandingProvider'
 
 interface Order {
   id: string
@@ -32,6 +33,7 @@ interface Order {
 export default function OrderConfirmationPage({ params }: { params: { id: string } }) {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const { branding } = useBranding()
   const [order, setOrder] = useState<Order | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
@@ -223,7 +225,7 @@ export default function OrderConfirmationPage({ params }: { params: { id: string
             Questions about your order?
           </p>
           <p className="text-coffee-brown font-medium">
-            Contact us at support@roasterordering.com or 1-800-ROASTER
+            Contact us at {branding.contactEmail || 'support@roasterordering.com'} or {branding.contactPhone || '1-800-ROASTER'}
           </p>
         </div>
       </div>

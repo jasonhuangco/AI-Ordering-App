@@ -138,7 +138,7 @@ export default function LoginPage() {
           <div className="mt-6 text-center">
             <p className="text-sm text-coffee-dark/70 font-body">
               Need help accessing your account?{' '}
-              <a href="mailto:support@roasterordering.com" className="font-medium text-coffee-brown hover:text-coffee-dark transition-colors">
+              <a href={`mailto:${branding.contactEmail || 'support@roasterordering.com'}`} className="font-medium text-coffee-brown hover:text-coffee-dark transition-colors">
                 Contact Support
               </a>
             </p>

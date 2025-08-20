@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import CustomerNav from '../../components/CustomerNav'
 import { generateOrderNumberWithSequence } from '../../lib/orderUtils'
+import { useBranding } from '../../components/BrandingProvider'
 
 interface Order {
   id: string
@@ -27,6 +28,7 @@ interface Order {
 export default function DashboardPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const { branding } = useBranding()
   const [orders, setOrders] = useState<Order[]>([])
   const [customerCode, setCustomerCode] = useState<number | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -235,11 +237,11 @@ export default function DashboardPage() {
             Our team is here to help with your coffee ordering needs
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <a href="mailto:support@roasterordering.com" className="text-coffee-light hover:text-white">
-              📧 support@roasterordering.com
+            <a href={`mailto:${branding.contactEmail || 'support@roasterordering.com'}`} className="text-coffee-light hover:text-white">
+              📧 {branding.contactEmail || 'support@roasterordering.com'}
             </a>
-            <a href="tel:1-800-ROASTER" className="text-coffee-light hover:text-white">
-              📞 1-800-ROASTER
+            <a href={`tel:${branding.contactPhone || '1-800-ROASTER'}`} className="text-coffee-light hover:text-white">
+              📞 {branding.contactPhone || '1-800-ROASTER'}
             </a>
           </div>
         </div>
