@@ -126,7 +126,7 @@ export default function CustomerDetailPage() {
         <div className="container mx-auto px-4 py-8">
           <div className="bg-white rounded-lg shadow-lg p-6">
             <h1 className="text-2xl font-bold text-coffee-dark mb-4">Customer Not Found</h1>
-            <p className="text-gray-600 mb-4">The customer you're looking for doesn't exist.</p>
+            <p className="text-gray-600 mb-4">The customer you&apos;re looking for doesn&apos;t exist.</p>
             <Link
               href="/admin/customers"
               className="bg-coffee-brown text-white px-4 py-2 rounded hover:bg-coffee-dark transition-colors"
