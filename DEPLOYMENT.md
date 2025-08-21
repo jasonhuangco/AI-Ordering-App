@@ -70,8 +70,25 @@ openssl rand -base64 32
 
 ### Database Setup
 
+**IMPORTANT**: You must run the database setup script before deployment.
+
+1. **Go to your Supabase Dashboard**:
+   - Visit [app.supabase.com](https://app.supabase.com)
+   - Select your project
+   - Go to "SQL Editor"
+
+2. **Run the Database Setup Script**:
+   - Copy the contents of `production-database-setup.sql`
+   - Paste and run it in the SQL Editor
+   - This creates all necessary tables and columns including `password_hash`
+
+3. **Verify Tables Created**:
+   - Go to "Table Editor" in Supabase
+   - Confirm you see: `users`, `products`, `orders`, `order_items`, `favorites`, `branding_settings`, `reminder_settings`
+   - Verify the `users` table has a `password_hash` column
+
 The application uses Supabase with the following main tables:
-- `users` - Customer and admin accounts
+- `users` - Customer and admin accounts (with password_hash column)
 - `products` - Coffee products and inventory
 - `orders` - Customer orders
 - `order_items` - Individual items within orders
@@ -83,9 +100,15 @@ The application uses Supabase with the following main tables:
 
 After deployment:
 
-1. **Create Admin Account**: Visit `/api/admin/setup` to create the initial admin user
+1. **Create Initial Admin Account**: 
+   - Visit `https://your-domain.vercel.app/setup` 
+   - Fill out the form to create your first admin user
+   - This endpoint only works if no admin users exist yet
+
 2. **Configure Branding**: Login as admin and go to Settings to customize branding
+
 3. **Add Products**: Add your coffee products through the admin panel
+
 4. **Test Customer Flow**: Create a test customer account and place an order
 
 ### Features
@@ -107,3 +130,31 @@ After deployment:
 ### Support
 
 For technical support or questions about this deployment, contact the development team.
+
+## Troubleshooting
+
+### Common Deployment Issues
+
+**1. "Missing Supabase server environment variables"**
+- Ensure all environment variables are set in Vercel
+- Check that `SUPABASE_SERVICE_ROLE_KEY` is the service role key, not anon key
+
+**2. "Could not find the 'password_hash' column"**
+- Run the `production-database-setup.sql` script in Supabase SQL Editor
+- Verify the `users` table has a `password_hash` column
+
+**3. "Internal Server Error" when creating admin**
+- Use the `/setup` endpoint instead of trying to create admin through regular admin panel
+- Ensure database setup script was run successfully
+
+**4. Build failures**
+- Check Vercel build logs for specific error messages
+- Ensure all environment variables are correctly set
+- Verify no TypeScript or ESLint errors
+
+### Verifying Deployment
+
+1. **Test Setup Page**: Visit `/setup` and create admin user
+2. **Test Login**: Use admin credentials to login
+3. **Test Branding**: Go to Settings and update company info
+4. **Test Customer Flow**: Create customer account and place order
