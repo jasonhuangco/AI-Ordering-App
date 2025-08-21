@@ -107,6 +107,55 @@ CREATE TABLE IF NOT EXISTS reminder_settings (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Add missing columns to reminder_settings if they don't exist
+DO $$
+BEGIN
+    -- Add enabled column if it doesn't exist
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'reminder_settings' 
+        AND column_name = 'enabled'
+    ) THEN
+        ALTER TABLE reminder_settings ADD COLUMN enabled BOOLEAN NOT NULL DEFAULT false;
+    END IF;
+    
+    -- Add reminder_day column if it doesn't exist
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'reminder_settings' 
+        AND column_name = 'reminder_day'
+    ) THEN
+        ALTER TABLE reminder_settings ADD COLUMN reminder_day INTEGER NOT NULL DEFAULT 1;
+    END IF;
+    
+    -- Add reminder_time column if it doesn't exist
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'reminder_settings' 
+        AND column_name = 'reminder_time'
+    ) THEN
+        ALTER TABLE reminder_settings ADD COLUMN reminder_time TIME NOT NULL DEFAULT '09:00:00';
+    END IF;
+    
+    -- Add email_enabled column if it doesn't exist
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'reminder_settings' 
+        AND column_name = 'email_enabled'
+    ) THEN
+        ALTER TABLE reminder_settings ADD COLUMN email_enabled BOOLEAN NOT NULL DEFAULT false;
+    END IF;
+    
+    -- Add sms_enabled column if it doesn't exist
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'reminder_settings' 
+        AND column_name = 'sms_enabled'
+    ) THEN
+        ALTER TABLE reminder_settings ADD COLUMN sms_enabled BOOLEAN NOT NULL DEFAULT false;
+    END IF;
+END $$;
+
 -- 8. Create indexes for performance
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
@@ -178,20 +227,26 @@ SELECT
 WHERE NOT EXISTS (SELECT 1 FROM branding_settings);
 
 -- 11. Insert default reminder settings if none exist
-INSERT INTO reminder_settings (
-    enabled,
-    reminder_day,
-    reminder_time,
-    email_enabled,
-    sms_enabled
-)
-SELECT 
-    false,
-    1,
-    '09:00:00',
-    false,
-    false
-WHERE NOT EXISTS (SELECT 1 FROM reminder_settings);
+DO $$
+BEGIN
+    -- Check if reminder_settings table has any rows
+    IF NOT EXISTS (SELECT 1 FROM reminder_settings LIMIT 1) THEN
+        -- Insert default settings
+        INSERT INTO reminder_settings (
+            enabled,
+            reminder_day,
+            reminder_time,
+            email_enabled,
+            sms_enabled
+        ) VALUES (
+            false,
+            1,
+            '09:00:00',
+            false,
+            false
+        );
+    END IF;
+END $$;
 
 -- 12. Create sequence for customer codes
 CREATE SEQUENCE IF NOT EXISTS customer_code_seq START WITH 1001;
