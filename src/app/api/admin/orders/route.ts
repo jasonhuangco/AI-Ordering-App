@@ -19,9 +19,16 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '20')
     const page = parseInt(searchParams.get('page') || '1')
     const userId = searchParams.get('userId')
+    const customerId = searchParams.get('customerId')
+    const includeArchived = searchParams.get('includeArchived') === 'true'
+    const archivedOnly = searchParams.get('archivedOnly') === 'true'
 
     // Get all orders using Supabase function
-    const allOrders = await getAllOrders()
+    const allOrders = await getAllOrders({
+      includeArchived,
+      archivedOnly,
+      userId: userId || customerId || undefined // Support both parameter names for backward compatibility
+    })
 
     // Filter by userId if specified
     let filteredOrders = allOrders

@@ -206,6 +206,7 @@ export const getOrdersByUserId = async (userId: string) => {
     total: order.total_amount, // This is the key fix!
     status: order.status,
     notes: order.notes,
+    isArchived: order.is_archived || false,
     createdAt: order.created_at,
     updatedAt: order.updated_at,
     user: {
@@ -245,6 +246,8 @@ export const getAllOrders = async (options?: {
   limit?: number
   offset?: number
   userId?: string
+  includeArchived?: boolean
+  archivedOnly?: boolean
 }) => {
   let query = supabaseAdmin
     .from('orders')
@@ -260,6 +263,14 @@ export const getAllOrders = async (options?: {
   
   if (options?.userId) {
     query = query.eq('user_id', options.userId)
+  }
+  
+  // Filter by archived status
+  if (options?.archivedOnly) {
+    query = query.eq('is_archived', true)
+  } else if (!options?.includeArchived) {
+    // By default, exclude archived orders unless specifically requested
+    query = query.eq('is_archived', false)
   }
   
   if (options?.limit) {
@@ -282,6 +293,7 @@ export const getAllOrders = async (options?: {
     total: order.total_amount, // This is the key fix!
     status: order.status,
     notes: order.notes,
+    isArchived: order.is_archived || false,
     createdAt: order.created_at,
     updatedAt: order.updated_at,
     user: order.users ? {
@@ -575,7 +587,7 @@ export const getAdminStats = async () => {
   const totalRevenue = revenueData?.reduce((sum, order) => sum + (order.total_amount || 0), 0) || 0
   
   // Get active customers count
-  const { count: activeCustomers, error: customersError } = await supabaseAdmin
+  const { count: totalCustomers, error: customersError } = await supabaseAdmin
     .from('users')
     .select('*', { count: 'exact', head: true })
     .eq('role', 'CUSTOMER')
@@ -594,65 +606,48 @@ export const getAdminStats = async () => {
   return {
     totalOrders: totalOrders || 0,
     totalRevenue,
-    totalCustomers: activeCustomers || 0,
+    totalCustomers: totalCustomers || 0,
     totalProducts: totalProducts || 0
   }
 }
 
-// Get products visible to a specific customer (global products + assigned products)
-export const getCustomerVisibleProducts = async (userId: string) => {
-  try {
-    // Get all global products that are active
-    const { data: globalProducts, error: globalError } = await supabaseAdmin
-      .from('products')
-      .select('*')
-      .eq('is_global', true)
-      .eq('is_active', true)
-    
-    if (globalError) throw globalError
+// Order Archive Functions
+export const archiveOrder = async (orderId: string) => {
+  const { data, error } = await supabaseAdmin
+    .from('orders')
+    .update({ 
+      is_archived: true,
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', orderId)
+    .select('id, is_archived')
+    .single()
+  
+  if (error) throw error
+  return data
+}
 
-    // Get customer-specific assigned products that are active
-    const { data: assignedProducts, error: assignedError } = await supabaseAdmin
-      .from('customer_products')
-      .select(`
-        custom_price,
-        products (*)
-      `)
-      .eq('user_id', userId)
-      .eq('is_active', true)
-    
-    if (assignedError) throw assignedError
+export const unarchiveOrder = async (orderId: string) => {
+  const { data, error } = await supabaseAdmin
+    .from('orders')
+    .update({ 
+      is_archived: false,
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', orderId)
+    .select('id, is_archived')
+    .single()
+  
+  if (error) throw error
+  return data
+}
 
-    // Convert assigned products to the same format as global products
-    const assignedProductsFormatted = assignedProducts?.map(assignment => ({
-      ...assignment.products,
-      custom_price: assignment.custom_price // Include custom pricing if available
-    })) || []
-
-    // Combine global and assigned products, removing duplicates
-    const allProducts = [...(globalProducts || []), ...assignedProductsFormatted]
-    const uniqueProducts = allProducts.filter((product, index, self) => 
-      index === self.findIndex(p => p.id === product.id)
-    )
-
-    // Convert field names from snake_case to camelCase
-    const formattedProducts = uniqueProducts.map(product => ({
-      id: product.id,
-      name: product.name,
-      description: product.description,
-      category: product.category,
-      unit: product.unit,
-      price: product.custom_price || product.price, // Use custom price if available
-      isGlobal: product.is_global,
-      isActive: product.is_active,
-      imageUrl: product.image_url,
-      createdAt: product.created_at,
-      updatedAt: product.updated_at
-    }))
-
-    return formattedProducts
-  } catch (error) {
-    console.error('Error fetching customer visible products:', error)
-    throw error
-  }
+export const getArchivedOrdersCount = async () => {
+  const { count, error } = await supabaseAdmin
+    .from('orders')
+    .select('*', { count: 'exact', head: true })
+    .eq('is_archived', true)
+  
+  if (error) throw error
+  return count || 0
 }

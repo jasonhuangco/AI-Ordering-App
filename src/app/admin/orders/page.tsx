@@ -21,6 +21,7 @@ interface Order {
   total: number
   status: string
   notes: string | null
+  isArchived?: boolean
   createdAt: string
   items: {
     id: string
@@ -64,6 +65,8 @@ export default function AdminOrdersPage() {
   const [orders, setOrders] = useState<Order[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [filterStatus, setFilterStatus] = useState<string>('ALL')
+  const [filterCustomerId, setFilterCustomerId] = useState<string>('ALL')
+  const [showArchived, setShowArchived] = useState<boolean>(false)
   const [showCreateOrderModal, setShowCreateOrderModal] = useState(false)
   
   // Create order modal state
@@ -89,12 +92,21 @@ export default function AdminOrdersPage() {
   useEffect(() => {
     if (session?.user?.role === 'ADMIN') {
       fetchOrders()
+      fetchCustomers()
     }
-  }, [session])
+  }, [session, showArchived, filterCustomerId])
 
   const fetchOrders = async () => {
     try {
-      const response = await fetch('/api/admin/orders')
+      const url = new URL('/api/admin/orders', window.location.origin)
+      if (showArchived) {
+        url.searchParams.set('archivedOnly', 'true')
+      }
+      if (filterCustomerId !== 'ALL') {
+        url.searchParams.set('customerId', filterCustomerId)
+      }
+      
+      const response = await fetch(url.toString())
       if (response.ok) {
         const data = await response.json()
         setOrders(data.orders || [])
@@ -242,6 +254,56 @@ export default function AdminOrdersPage() {
     }
   }
 
+  const archiveOrder = async (orderId: string) => {
+    if (!confirm('Are you sure you want to archive this order? It will be hidden from the main list.')) {
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/admin/orders/${orderId}/archive`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'archive' })
+      })
+
+      if (response.ok) {
+        fetchOrders() // Refresh the list
+        alert('Order archived successfully')
+      } else {
+        const errorData = await response.json()
+        alert(errorData.error || 'Failed to archive order')
+      }
+    } catch (error) {
+      console.error('Failed to archive order:', error)
+      alert('Failed to archive order')
+    }
+  }
+
+  const unarchiveOrder = async (orderId: string) => {
+    if (!confirm('Are you sure you want to unarchive this order? It will appear in the main orders list.')) {
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/admin/orders/${orderId}/archive`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'unarchive' })
+      })
+
+      if (response.ok) {
+        fetchOrders() // Refresh the list
+        alert('Order unarchived successfully')
+      } else {
+        const errorData = await response.json()
+        alert(errorData.error || 'Failed to unarchive order')
+      }
+    } catch (error) {
+      console.error('Failed to unarchive order:', error)
+      alert('Failed to unarchive order')
+    }
+  }
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'PENDING': return 'bg-yellow-100 text-yellow-800'
@@ -255,9 +317,26 @@ export default function AdminOrdersPage() {
   const statusOptions = ['PENDING', 'CONFIRMED', 'SHIPPED', 'CANCELLED']
   const filterOptions = ['ALL', ...statusOptions]
 
+  // Client-side filtering is now minimal since server-side filtering handles customer
   const filteredOrders = filterStatus === 'ALL' 
     ? orders 
     : orders.filter(order => order.status === filterStatus)
+
+  // Get unique customers for filter dropdown
+  const uniqueCustomers = customers.filter((customer, index, self) => 
+    index === self.findIndex(c => c.id === customer.id)
+  )
+
+  const resetFilters = () => {
+    setFilterStatus('ALL')
+    setFilterCustomerId('ALL')
+    setShowArchived(false)
+  }
+
+  const filterByCustomer = (customerId: string) => {
+    setFilterCustomerId(customerId)
+    setFilterStatus('ALL') // Reset status filter when filtering by customer
+  }
 
   if (status === 'loading' || isLoading) {
     return <div className="min-h-screen bg-cream flex items-center justify-center">
@@ -276,7 +355,23 @@ export default function AdminOrdersPage() {
       {/* Page Header */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-4 sm:space-y-0">
-          <h1 className="text-2xl font-serif font-bold text-coffee-dark">Order Management</h1>
+          <div>
+            <h1 className="text-2xl font-serif font-bold text-coffee-dark">Order Management</h1>
+            {(filterCustomerId !== 'ALL' || showArchived) && (
+              <div className="flex items-center space-x-2 mt-1">
+                <span className="text-sm text-gray-600">
+                  Showing {filteredOrders.length} order{filteredOrders.length !== 1 ? 's' : ''}
+                  {filterCustomerId !== 'ALL' && (
+                    <span className="text-coffee-brown font-medium">
+                      {' '}for {customers.find(c => c.id === filterCustomerId)?.companyName || 
+                             customers.find(c => c.id === filterCustomerId)?.contactName || 'customer'}
+                    </span>
+                  )}
+                  {showArchived && <span className="text-gray-500"> (archived)</span>}
+                </span>
+              </div>
+            )}
+          </div>
           <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
             <button
               onClick={handleOpenCreateModal}
@@ -290,8 +385,41 @@ export default function AdminOrdersPage() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
         {/* Filters */}
-        <div className="mb-6">
-          <div className="flex flex-wrap gap-2">
+        <div className="mb-6 space-y-4">
+          {/* Archive Toggle and Customer Filter */}
+          <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-6">
+            <label className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                checked={showArchived}
+                onChange={(e) => setShowArchived(e.target.checked)}
+                className="rounded border-gray-300 text-coffee-brown focus:ring-coffee-brown focus:border-coffee-brown"
+              />
+              <span className="text-sm font-medium text-gray-700">
+                Show Archived Orders {showArchived && `(${orders.length})`}
+              </span>
+            </label>
+            
+            {/* Customer Filter Dropdown */}
+            <div className="flex items-center space-x-2">
+              <label className="text-sm font-medium text-gray-700">Filter by Customer:</label>
+              <select
+                value={filterCustomerId}
+                onChange={(e) => setFilterCustomerId(e.target.value)}
+                className="border border-gray-300 rounded px-3 py-1 text-sm focus:ring-coffee-brown focus:border-coffee-brown"
+              >
+                <option value="ALL">All Customers</option>
+                {uniqueCustomers.map(customer => (
+                  <option key={customer.id} value={customer.id}>
+                    {customer.companyName || customer.contactName || customer.email}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          
+          {/* Status Filters and Reset Button */}
+          <div className="flex flex-wrap items-center gap-2">
             {filterOptions.map(status => (
               <button
                 key={status}
@@ -302,9 +430,19 @@ export default function AdminOrdersPage() {
                     : 'bg-white text-coffee-brown border border-coffee-brown hover:bg-coffee-light'
                 }`}
               >
-                {status} {status !== 'ALL' && `(${orders.filter(o => o.status === status).length})`}
+                {status} {status !== 'ALL' && `(${filteredOrders.filter(o => o.status === status).length})`}
               </button>
             ))}
+            
+            {/* Reset Filters Button */}
+            {(filterStatus !== 'ALL' || filterCustomerId !== 'ALL' || showArchived) && (
+              <button
+                onClick={resetFilters}
+                className="px-3 py-1 rounded text-sm bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-300"
+              >
+                Reset Filters
+              </button>
+            )}
           </div>
         </div>
 
@@ -313,7 +451,16 @@ export default function AdminOrdersPage() {
           <div className="text-center py-12">
             <div className="text-6xl mb-4">📦</div>
             <h2 className="text-2xl font-serif text-coffee-dark mb-4">
-              {filterStatus === 'ALL' ? 'No orders yet' : `No ${filterStatus.toLowerCase()} orders`}
+              {(() => {
+                if (showArchived) return 'No archived orders found'
+                if (filterCustomerId !== 'ALL') {
+                  const selectedCustomer = customers.find(c => c.id === filterCustomerId)
+                  const customerName = selectedCustomer?.companyName || selectedCustomer?.contactName || 'this customer'
+                  return `No orders found for ${customerName}`
+                }
+                if (filterStatus !== 'ALL') return `No ${filterStatus.toLowerCase()} orders found`
+                return 'No orders yet'
+              })()}
             </h2>
             <p className="text-gray-600">
               {filterStatus === 'ALL' 
@@ -332,9 +479,13 @@ export default function AdminOrdersPage() {
                       <h3 className="text-lg font-semibold text-coffee-dark">
                         {order.sequenceNumber ? generateOrderNumberWithSequence(order.sequenceNumber, order.createdAt, order.user.customerCode) : `Order #${order.id.slice(-8)}`}
                       </h3>
-                      <p className="text-gray-600">
+                      <button
+                        onClick={() => filterByCustomer(order.user.id)}
+                        className="text-gray-600 hover:text-coffee-brown transition-colors"
+                        title="Filter orders for this customer"
+                      >
                         {order.user.companyName || order.user.contactName || order.user.email}
-                      </p>
+                      </button>
                       <p className="text-sm text-gray-500">
                         {new Date(order.createdAt).toLocaleDateString('en-US', {
                           year: 'numeric',
@@ -383,6 +534,7 @@ export default function AdminOrdersPage() {
                         value={order.status}
                         onChange={(e) => updateOrderStatus(order.id, e.target.value)}
                         className="border border-gray-300 rounded px-2 py-1 text-sm"
+                        disabled={showArchived}
                       >
                         {statusOptions.map(status => (
                           <option key={status} value={status}>
@@ -392,6 +544,21 @@ export default function AdminOrdersPage() {
                       </select>
                     </div>
                     <div className="flex space-x-2">
+                      {showArchived ? (
+                        <button
+                          onClick={() => unarchiveOrder(order.id)}
+                          className="text-green-600 hover:text-green-800 text-sm font-medium"
+                        >
+                          Unarchive
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => archiveOrder(order.id)}
+                          className="text-gray-600 hover:text-gray-800 text-sm font-medium mr-2"
+                        >
+                          Archive
+                        </button>
+                      )}
                       <Link
                         href={`/admin/orders/${order.id}`}
                         className="text-coffee-brown hover:text-coffee-dark text-sm font-medium"

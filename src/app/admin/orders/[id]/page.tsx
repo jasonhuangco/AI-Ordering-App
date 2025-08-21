@@ -21,6 +21,7 @@ interface Order {
   total: number
   status: string
   notes: string | null
+  isArchived?: boolean
   createdAt: string
   updatedAt: string
   items: {
@@ -109,6 +110,67 @@ export default function AdminOrderDetailPage({ params }: { params: { id: string 
     }
   }
 
+  const archiveOrder = async () => {
+    if (!order) return
+    
+    if (!confirm('Are you sure you want to archive this order? It will be hidden from the main list.')) {
+      return
+    }
+
+    setIsUpdating(true)
+    try {
+      const response = await fetch(`/api/admin/orders/${params.id}/archive`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'archive' })
+      })
+
+      if (response.ok) {
+        alert('Order archived successfully!')
+        router.push('/admin/orders')
+      } else {
+        const errorData = await response.json()
+        alert(errorData.error || 'Failed to archive order')
+      }
+    } catch (error) {
+      console.error('Failed to archive order:', error)
+      alert('Failed to archive order')
+    } finally {
+      setIsUpdating(false)
+    }
+  }
+
+  const unarchiveOrder = async () => {
+    if (!order) return
+    
+    if (!confirm('Are you sure you want to unarchive this order? It will appear in the main orders list.')) {
+      return
+    }
+
+    setIsUpdating(true)
+    try {
+      const response = await fetch(`/api/admin/orders/${params.id}/archive`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'unarchive' })
+      })
+
+      if (response.ok) {
+        const updatedOrder = await response.json()
+        setOrder({ ...order, isArchived: false })
+        alert('Order unarchived successfully!')
+      } else {
+        const errorData = await response.json()
+        alert(errorData.error || 'Failed to unarchive order')
+      }
+    } catch (error) {
+      console.error('Failed to unarchive order:', error)
+      alert('Failed to unarchive order')
+    } finally {
+      setIsUpdating(false)
+    }
+  }
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'PENDING': return 'bg-yellow-100 text-yellow-800'
@@ -166,9 +228,16 @@ export default function AdminOrderDetailPage({ params }: { params: { id: string 
                   </div>
                   <div>
                     <h3 className="font-medium text-gray-700">Status</h3>
-                    <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(order.status)}`}>
-                      {order.status}
-                    </span>
+                    <div className="flex items-center space-x-2">
+                      <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(order.status)}`}>
+                        {order.status}
+                      </span>
+                      {order.isArchived && (
+                        <span className="inline-block px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-600">
+                          ARCHIVED
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <div>
                     <h3 className="font-medium text-gray-700">Order Date</h3>
@@ -345,6 +414,23 @@ export default function AdminOrderDetailPage({ params }: { params: { id: string 
                   >
                     Back to All Orders
                   </Link>
+                  {!order.isArchived ? (
+                    <button
+                      onClick={archiveOrder}
+                      disabled={isUpdating}
+                      className="block w-full text-center bg-red-100 text-red-700 py-2 rounded-lg hover:bg-red-200 disabled:opacity-50"
+                    >
+                      {isUpdating ? 'Archiving...' : 'Archive Order'}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={unarchiveOrder}
+                      disabled={isUpdating}
+                      className="block w-full text-center bg-green-100 text-green-700 py-2 rounded-lg hover:bg-green-200 disabled:opacity-50"
+                    >
+                      {isUpdating ? 'Unarchiving...' : 'Unarchive Order'}
+                    </button>
+                  )}
                 </div>
               </div>
             </div>

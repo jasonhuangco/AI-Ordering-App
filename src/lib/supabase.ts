@@ -102,6 +102,7 @@ export interface Database {
           status: 'PENDING' | 'CONFIRMED' | 'SHIPPED' | 'CANCELLED'
           total_amount: number
           notes: string | null
+          is_archived: boolean
           created_at: string
           updated_at: string
         }
@@ -111,11 +112,13 @@ export interface Database {
           status?: 'PENDING' | 'CONFIRMED' | 'SHIPPED' | 'CANCELLED'
           total_amount: number
           notes?: string | null
+          is_archived?: boolean
         }
         Update: {
           status?: 'PENDING' | 'CONFIRMED' | 'SHIPPED' | 'CANCELLED'
           total_amount?: number
           notes?: string | null
+          is_archived?: boolean
         }
       }
       order_items: {
