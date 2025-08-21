@@ -460,6 +460,17 @@ export const addFavorite = async (userId: string, productId: string) => {
   return data
 }
 
+export const removeFavorite = async (userId: string, productId: string) => {
+  const { error } = await supabaseAdmin
+    .from('favorites')
+    .delete()
+    .eq('user_id', userId)
+    .eq('product_id', productId)
+  
+  if (error) throw error
+  return true
+}
+
 // Sequence management for orders
 export const getNextOrderSequence = async () => {
   const { data, error } = await supabaseAdmin
@@ -526,45 +537,98 @@ export const getCustomerProducts = async (userId: string) => {
   return data || []
 }
 
-export const assignProductsToCustomer = async (userId: string, productIds: string[], customPrices: Record<string, number> = {}) => {
-  const assignments = productIds.map(productId => ({
-    user_id: userId,
-    product_id: productId,
-    custom_price: customPrices[productId] || null,
-    is_active: true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  }))
-  
-  const { data, error } = await supabaseAdmin
-    .from('customer_products')
-    .insert(assignments)
-    .select()
-  
-  if (error) throw error
-  return data
-}
-
-export const removeProductAssignment = async (userId: string, productId: string) => {
-  const { error } = await supabaseAdmin
-    .from('customer_products')
-    .delete()
-    .eq('user_id', userId)
-    .eq('product_id', productId)
-  
-  if (error) throw error
-  return true
-}
-
-export const removeFavorite = async (userId: string, productId: string) => {
-  const { error } = await supabaseAdmin
-    .from('favorites')
-    .delete()
-    .eq('user_id', userId)
-    .eq('product_id', productId)
-  
-  if (error) throw error
-  return true
+// Get products visible to a customer (global products + assigned products)
+export const getCustomerVisibleProducts = async (userId: string) => {
+  try {
+    // Get all global products
+    const { data: globalProducts, error: globalError } = await supabaseAdmin
+      .from('products')
+      .select('*')
+      .eq('is_global', true)
+      .eq('is_active', true)
+    
+    if (globalError) throw globalError
+    
+    // Get customer-specific product assignments
+    const { data: customerAssignments, error: assignmentError } = await supabaseAdmin
+      .from('customer_products')
+      .select(`
+        custom_price,
+        products (*)
+      `)
+      .eq('user_id', userId)
+      .eq('is_active', true)
+    
+    // If customer_products table doesn't exist or has no data, just return global products
+    const customerProducts = assignmentError ? [] : (customerAssignments || [])
+    
+    // Combine global products with customer-specific products
+    const allProducts = [...(globalProducts || [])]
+    
+    // Add customer-specific products (non-global products assigned to this customer)
+    customerProducts.forEach((assignment: any) => {
+      if (assignment.products && !assignment.products.is_global) {
+        const product = {
+          ...assignment.products,
+          // Use custom price if specified
+          price: assignment.custom_price || assignment.products.price
+        }
+        allProducts.push(product)
+      } else if (assignment.products && assignment.products.is_global && assignment.custom_price) {
+        // Update price for global products with custom pricing
+        const productIndex = allProducts.findIndex(p => p.id === assignment.products.id)
+        if (productIndex >= 0) {
+          allProducts[productIndex] = {
+            ...allProducts[productIndex],
+            price: assignment.custom_price
+          }
+        }
+      }
+    })
+    
+    // Remove duplicates and convert to frontend format
+    const uniqueProducts = Array.from(
+      new Map(allProducts.map(product => [product.id, product])).values()
+    )
+    
+    return uniqueProducts.map(product => ({
+      id: product.id,
+      name: product.name,
+      description: product.description,
+      category: product.category,
+      price: product.price,
+      unit: product.unit,
+      isActive: product.is_active,
+      isGlobal: product.is_global,
+      imageUrl: product.image_url,
+      createdAt: product.created_at,
+      updatedAt: product.updated_at
+    }))
+  } catch (error) {
+    // If customer_products functionality isn't set up yet, fall back to global products only
+    console.warn('Customer products functionality not available, returning global products only:', error)
+    const { data: globalProducts, error: globalError } = await supabaseAdmin
+      .from('products')
+      .select('*')
+      .eq('is_global', true)
+      .eq('is_active', true)
+    
+    if (globalError) throw globalError
+    
+    return (globalProducts || []).map(product => ({
+      id: product.id,
+      name: product.name,
+      description: product.description,
+      category: product.category,
+      price: product.price,
+      unit: product.unit,
+      isActive: product.is_active,
+      isGlobal: product.is_global,
+      imageUrl: product.image_url,
+      createdAt: product.created_at,
+      updatedAt: product.updated_at
+    }))
+  }
 }
 
 // Admin statistics
