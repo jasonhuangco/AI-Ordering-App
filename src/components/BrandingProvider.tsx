@@ -57,31 +57,23 @@ const BrandingContext = createContext<BrandingContextType | undefined>(undefined
 export function BrandingProvider({ children }: { children: React.ReactNode }) {
   const [branding, setBranding] = useState<BrandingSettings>(defaultBranding)
 
-  const refreshBranding = async () => {
+    const refreshBranding = async () => {
     try {
-      // Check for cached branding first
-      const cachedBranding = localStorage.getItem('brandingSettings')
-      if (cachedBranding) {
-        try {
-          const parsed = JSON.parse(cachedBranding)
-          setBranding(parsed)
-          applyBrandingToDOM(parsed)
-        } catch (error) {
-          console.error('Error parsing cached branding:', error)
-        }
-      }
-
-      // Fetch latest branding settings from server
-      const response = await fetch('/api/admin/branding-settings')
+      // Use public branding endpoint instead of admin-only endpoint
+      const response = await fetch('/api/branding')
       if (response.ok) {
-        const data = await response.json()
-        setBranding(data)
-        applyBrandingToDOM(data)
-        // Cache the new branding settings
-        localStorage.setItem('brandingSettings', JSON.stringify(data))
+        const settings = await response.json()
+        setBranding(settings)
+        applyBrandingToDOM(settings)
+      } else {
+        console.warn('Failed to fetch branding settings, using defaults')
+        setBranding(defaultBranding)
+        applyBrandingToDOM(defaultBranding)
       }
     } catch (error) {
-      console.error('Failed to fetch branding settings:', error)
+      console.error('Error fetching branding settings:', error)
+      setBranding(defaultBranding)
+      applyBrandingToDOM(defaultBranding)
     }
   }
 
@@ -109,10 +101,12 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
     // Apply background color to body
     document.body.style.backgroundColor = brandingSettings.backgroundColor
     
-    // Update document title
+    // Update document title with proper null checks
     const titleElement = document.querySelector('title')
-    if (titleElement && titleElement.textContent?.includes('Roaster Ordering')) {
-      titleElement.textContent = titleElement.textContent.replace('Roaster Ordering', brandingSettings.companyName)
+    if (titleElement && titleElement.textContent && brandingSettings.companyName) {
+      if (titleElement.textContent.includes('Roaster Ordering')) {
+        titleElement.textContent = titleElement.textContent.replace('Roaster Ordering', brandingSettings.companyName)
+      }
     }
 
     // Force a repaint by updating a data attribute

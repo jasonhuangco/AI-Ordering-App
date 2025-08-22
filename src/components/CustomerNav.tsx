@@ -22,6 +22,9 @@ export default function CustomerNav({ currentPage }: CustomerNavProps) {
     setIsMobileMenuOpen(!isMobileMenuOpen)
   }
 
+  // Safely get company name with fallback
+  const companyName = branding?.companyName || 'Roaster Ordering'
+
   const navItems = [
     { href: '/dashboard', label: 'Dashboard', icon: '🏠' },
     { href: '/order/new', label: 'New Order', icon: '🛒' },
@@ -36,7 +39,7 @@ export default function CustomerNav({ currentPage }: CustomerNavProps) {
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center space-x-4">
             <Link href="/dashboard" className="text-xl font-bold text-white hover:text-coffee-light transition-colors">
-              {branding.companyName}
+              {companyName}
             </Link>
           </div>
           

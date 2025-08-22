@@ -2,6 +2,7 @@ import './globals.css'
 import { Inter, Playfair_Display, Montserrat, Dancing_Script, Open_Sans } from 'next/font/google'
 import AuthProvider from '../components/AuthProvider'
 import { BrandingProvider } from '../components/BrandingProvider'
+import BrandingErrorBoundary from '../components/BrandingErrorBoundary'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 const playfair = Playfair_Display({ subsets: ['latin'], variable: '--font-playfair' })
@@ -54,9 +55,11 @@ export default function RootLayout({
       </head>
       <body className="font-body min-h-screen antialiased">
         <AuthProvider>
-          <BrandingProvider>
-            {children}
-          </BrandingProvider>
+          <BrandingErrorBoundary>
+            <BrandingProvider>
+              {children}
+            </BrandingProvider>
+          </BrandingErrorBoundary>
         </AuthProvider>
       </body>
     </html>
