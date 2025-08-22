@@ -327,7 +327,7 @@ export default function AdminOrderDetailPage({ params }: { params: { id: string 
                         <h3 className="font-medium text-coffee-dark">{item.product.name}</h3>
                         <p className="text-sm text-gray-600">{item.product.description}</p>
                         <p className="text-sm text-gray-500">
-                          {item.product.category.replace('_', ' ')} • ${item.unitPrice.toFixed(2)} {item.product.unit}
+                          {item.product.category?.replace('_', ' ') || 'Other'} • ${item.unitPrice.toFixed(2)} {item.product.unit}
                         </p>
                       </div>
                       <div className="text-right ml-4">

@@ -104,8 +104,9 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
     // Update document title with proper null checks
     const titleElement = document.querySelector('title')
     if (titleElement && titleElement.textContent && brandingSettings.companyName) {
-      if (titleElement.textContent.includes('Roaster Ordering')) {
-        titleElement.textContent = titleElement.textContent.replace('Roaster Ordering', brandingSettings.companyName)
+      const currentTitle = titleElement.textContent
+      if (currentTitle && currentTitle.includes('Roaster Ordering')) {
+        titleElement.textContent = currentTitle.replace('Roaster Ordering', brandingSettings.companyName)
       }
     }
 

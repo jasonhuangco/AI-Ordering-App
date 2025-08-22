@@ -210,7 +210,7 @@ export default function NewOrderPage() {
                       : 'bg-white text-coffee-dark hover:bg-coffee-light'
                   }`}
                 >
-                  {category.replace('_', ' ')}
+                  {category?.replace('_', ' ') || 'Other'}
                 </button>
               ))}
             </div>
@@ -253,7 +253,7 @@ export default function NewOrderPage() {
                     <h3 className="text-lg font-semibold text-coffee-dark">{product.name}</h3>
                     <div className="flex items-center space-x-2">
                       <span className="bg-coffee-light text-coffee-dark text-xs px-2 py-1 rounded">
-                        {product.category.replace('_', ' ')}
+                        {product.category?.replace('_', ' ') || 'Other'}
                       </span>
                       <button
                         onClick={() => toggleFavorite(product.id)}

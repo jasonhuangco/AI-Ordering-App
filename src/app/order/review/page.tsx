@@ -242,7 +242,7 @@ export default function OrderReviewPage() {
                         <p className="text-sm text-gray-600">{item.product.description}</p>
                         <div className="flex items-center mt-2">
                           <span className="text-xs bg-coffee-light px-2 py-1 rounded">
-                            {item.product.category.replace('_', ' ')}
+                            {item.product.category?.replace('_', ' ') || 'Other'}
                           </span>
                           <span className="text-sm text-gray-600 ml-2">
                             ${item.product.price.toFixed(2)} {item.product.unit}

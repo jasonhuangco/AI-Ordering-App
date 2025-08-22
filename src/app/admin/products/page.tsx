@@ -57,7 +57,8 @@ export default function AdminProductsPage() {
     }
   }
 
-  const formatCategory = (category: string) => {
+  const formatCategory = (category: string | undefined | null) => {
+    if (!category) return 'Other'
     return category.replace('_', ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase())
   }
 

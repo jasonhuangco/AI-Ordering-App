@@ -241,7 +241,7 @@ export default function FavoritesPage() {
                         <h3 className="text-lg font-semibold text-coffee-dark">{favorite.product.name}</h3>
                         <div className="flex items-center space-x-2">
                           <span className="bg-coffee-light text-coffee-dark text-xs px-2 py-1 rounded">
-                            {favorite.product.category.replace('_', ' ')}
+                            {favorite.product.category?.replace('_', ' ') || 'Other'}
                           </span>
                           <button
                             onClick={() => removeFavorite(favorite.product.id)}

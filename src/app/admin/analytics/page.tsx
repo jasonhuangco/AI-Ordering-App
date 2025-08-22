@@ -340,7 +340,7 @@ export default function AdminAnalyticsPage() {
                        category === 'ACCESSORIES' ? '🔧' : '📦'}
                     </div>
                     <div className="font-semibold text-coffee-dark">{formatCurrency(revenue)}</div>
-                    <div className="text-sm text-coffee-brown capitalize">{category.toLowerCase().replace('_', ' ')}</div>
+                    <div className="text-sm text-coffee-brown capitalize">{category?.toLowerCase().replace('_', ' ') || 'other'}</div>
                   </div>
                 ))}
               </div>

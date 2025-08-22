@@ -70,7 +70,7 @@ export default function ProductsPage() {
                   ${product.price} / {product.unit}
                 </span>
                 <span className="text-sm text-gray-500 capitalize">
-                  {product.category.replace('_', ' ').toLowerCase()}
+                  {product.category?.replace('_', ' ').toLowerCase() || 'other'}
                 </span>
               </div>
             </div>
