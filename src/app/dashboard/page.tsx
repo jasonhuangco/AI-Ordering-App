@@ -191,7 +191,7 @@ export default function DashboardPage() {
                         {order.status}
                       </div>
                       <p className="text-lg font-semibold text-coffee-dark mt-1">
-                        ${order.total.toFixed(2)}
+                        ${(order.total || 0).toFixed(2)}
                       </p>
                     </div>
                   </div>

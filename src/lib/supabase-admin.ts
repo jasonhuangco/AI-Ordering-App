@@ -110,7 +110,7 @@ export const getAllProducts = async () => {
     id: product.id,
     name: product.name,
     description: product.description,
-    price: product.price,
+    price: Number(product.price) || 0, // Ensure price is a number
     category: product.category,
     unit: product.unit,
     isGlobal: product.is_global,
@@ -596,7 +596,7 @@ export const getCustomerVisibleProducts = async (userId: string) => {
       name: product.name,
       description: product.description,
       category: product.category,
-      price: product.price,
+      price: Number(product.price) || 0, // Ensure price is a number
       unit: product.unit,
       isActive: product.is_active,
       isGlobal: product.is_global,

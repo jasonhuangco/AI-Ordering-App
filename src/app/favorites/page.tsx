@@ -121,7 +121,8 @@ export default function FavoritesPage() {
   }
 
   const getCartTotal = () => {
-    return cart.reduce((total, item) => total + ((item.product.price || 0) * item.quantity), 0)
+    const total = cart.reduce((total, item) => total + ((item.product.price || 0) * item.quantity), 0)
+    return Number.isFinite(total) ? total : 0
   }
 
   const goToReview = () => {

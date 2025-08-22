@@ -265,7 +265,7 @@ export default function AdminOrderDetailPage({ params }: { params: { id: string 
                   </div>
                   <div className="md:col-span-2">
                     <h3 className="font-medium text-gray-700">Total Amount</h3>
-                    <p className="text-2xl font-bold text-coffee-brown">${order.total.toFixed(2)}</p>
+                    <p className="text-2xl font-bold text-coffee-brown">${(order.total || 0).toFixed(2)}</p>
                   </div>
                 </div>
               </div>
@@ -327,13 +327,13 @@ export default function AdminOrderDetailPage({ params }: { params: { id: string 
                         <h3 className="font-medium text-coffee-dark">{item.product.name}</h3>
                         <p className="text-sm text-gray-600">{item.product.description}</p>
                         <p className="text-sm text-gray-500">
-                          {item.product.category?.replace('_', ' ') || 'Other'} • ${item.unitPrice.toFixed(2)} {item.product.unit}
+                          {item.product.category?.replace('_', ' ') || 'Other'} • ${(item.unitPrice || 0).toFixed(2)} {item.product.unit}
                         </p>
                       </div>
                       <div className="text-right ml-4">
                         <p className="font-medium">Qty: {item.quantity}</p>
                         <p className="text-coffee-brown font-semibold">
-                          ${(item.unitPrice * item.quantity).toFixed(2)}
+                          ${((item.unitPrice || 0) * item.quantity).toFixed(2)}
                         </p>
                       </div>
                     </div>
@@ -343,7 +343,7 @@ export default function AdminOrderDetailPage({ params }: { params: { id: string 
                 <div className="mt-6 pt-4 border-t">
                   <div className="flex justify-between items-center text-xl font-bold">
                     <span>Total:</span>
-                    <span className="text-coffee-brown">${order.total.toFixed(2)}</span>
+                    <span className="text-coffee-brown">${(order.total || 0).toFixed(2)}</span>
                   </div>
                 </div>
               </div>

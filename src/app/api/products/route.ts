@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '../../../lib/auth'
-import { getAllProducts, createProduct, getCustomerProducts } from '../../../lib/supabase-admin'
+import { getAllProducts, createProduct, getCustomerVisibleProducts } from '../../../lib/supabase-admin'
 
 export async function GET(request: NextRequest) {
   try {
@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
       products = await getAllProducts()
     } else {
       // Customer users can only see global products + assigned products
-      products = await getCustomerProducts(session.user.id)
+      products = await getCustomerVisibleProducts(session.user.id)
     }
 
     return NextResponse.json(products)
