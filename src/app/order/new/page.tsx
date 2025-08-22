@@ -112,7 +112,7 @@ export default function NewOrderPage() {
   }
 
   const getCartTotal = () => {
-    return cart.reduce((total, item) => total + (item.product.price * item.quantity), 0)
+    return cart.reduce((total, item) => total + ((item.product.price || 0) * item.quantity), 0)
   }
 
   const toggleFavorite = async (productId: string) => {
@@ -276,7 +276,7 @@ export default function NewOrderPage() {
                   <div className="flex justify-between items-center mb-4">
                     <div>
                       <span className="text-2xl font-bold text-coffee-brown">
-                        ${product.price.toFixed(2)}
+                        ${(product.price || 0).toFixed(2)}
                       </span>
                       <span className="text-sm text-coffee-dark opacity-70 ml-1">
                         {product.unit}
@@ -309,7 +309,7 @@ export default function NewOrderPage() {
                         </button>
                       </div>
                       <span className="text-sm font-medium text-coffee-brown">
-                        ${(product.price * cartQuantity).toFixed(2)}
+                        ${((product.price || 0) * cartQuantity).toFixed(2)}
                       </span>
                     </div>
                   )}

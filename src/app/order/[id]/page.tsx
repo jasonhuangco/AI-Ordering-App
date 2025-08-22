@@ -162,7 +162,7 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
               <div>
                 <h3 className="font-semibold text-coffee-dark mb-2">Total</h3>
                 <p className="text-xl font-bold text-coffee-brown">
-                  ${order.total.toFixed(2)}
+                  ${(order.total || 0).toFixed(2)}
                 </p>
               </div>
             </div>
@@ -183,13 +183,13 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
                   <div className="flex-1">
                     <h4 className="font-medium text-coffee-dark">{item.product.name}</h4>
                     <p className="text-sm text-gray-600">
-                      {item.product.category?.replace('_', ' ') || 'Other'} • ${item.unitPrice.toFixed(2)} {item.product.unit}
+                      {item.product.category?.replace('_', ' ') || 'Other'} • ${(item.unitPrice || 0).toFixed(2)} {item.product.unit}
                     </p>
                   </div>
                   <div className="text-right">
                     <p className="font-medium">Qty: {item.quantity}</p>
                     <p className="text-coffee-brown font-semibold">
-                      ${(item.unitPrice * item.quantity).toFixed(2)}
+                      ${((item.unitPrice || 0) * item.quantity).toFixed(2)}
                     </p>
                   </div>
                 </div>
@@ -199,7 +199,7 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
             <div className="mt-6 pt-4 border-t">
               <div className="flex justify-between items-center text-xl font-bold">
                 <span>Total:</span>
-                <span className="text-coffee-brown">${order.total.toFixed(2)}</span>
+                <span className="text-coffee-brown">${(order.total || 0).toFixed(2)}</span>
               </div>
             </div>
           </div>

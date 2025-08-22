@@ -219,7 +219,7 @@ export default function AdminProductsPage() {
                       {/* Price and Unit */}
                       <div className="flex flex-wrap items-center gap-4 text-sm text-coffee-dark opacity-70">
                         <span className="font-semibold text-coffee-brown text-lg">
-                          ${product.price.toFixed(2)}
+                          ${(product.price || 0).toFixed(2)}
                         </span>
                         <span>{product.unit}</span>
                       </div>

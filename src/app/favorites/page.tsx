@@ -121,7 +121,7 @@ export default function FavoritesPage() {
   }
 
   const getCartTotal = () => {
-    return cart.reduce((total, item) => total + (item.product.price * item.quantity), 0)
+    return cart.reduce((total, item) => total + ((item.product.price || 0) * item.quantity), 0)
   }
 
   const goToReview = () => {
@@ -257,7 +257,7 @@ export default function FavoritesPage() {
                       
                       <div className="flex justify-between items-center mb-4">
                         <span className="text-lg font-bold text-coffee-brown">
-                          ${favorite.product.price.toFixed(2)} {favorite.product.unit}
+                          ${(favorite.product.price || 0).toFixed(2)} {favorite.product.unit}
                         </span>
                         <div className="text-xs text-gray-500">
                           Added {new Date(favorite.createdAt).toLocaleDateString()}
@@ -291,7 +291,7 @@ export default function FavoritesPage() {
                               </button>
                             </div>
                             <span className="text-sm font-medium text-coffee-brown">
-                              ${(favorite.product.price * cartQuantity).toFixed(2)}
+                              ${((favorite.product.price || 0) * cartQuantity).toFixed(2)}
                             </span>
                           </div>
                         )}

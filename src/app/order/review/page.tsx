@@ -115,7 +115,7 @@ export default function OrderReviewPage() {
   }
 
   const getCartTotal = () => {
-    return cart.reduce((total, item) => total + (item.product.price * item.quantity), 0)
+    return cart.reduce((total, item) => total + ((item.product.price || 0) * item.quantity), 0)
   }
 
   const getTotalItems = () => {
@@ -245,7 +245,7 @@ export default function OrderReviewPage() {
                             {item.product.category?.replace('_', ' ') || 'Other'}
                           </span>
                           <span className="text-sm text-gray-600 ml-2">
-                            ${item.product.price.toFixed(2)} {item.product.unit}
+                            ${(item.product.price || 0).toFixed(2)} {item.product.unit}
                           </span>
                         </div>
                       </div>
@@ -273,7 +273,7 @@ export default function OrderReviewPage() {
                     {/* Subtotal */}
                     <div className="text-right w-20">
                       <div className="font-semibold text-coffee-brown">
-                        ${(item.product.price * item.quantity).toFixed(2)}
+                        ${((item.product.price || 0) * item.quantity).toFixed(2)}
                       </div>
                     </div>
                     
