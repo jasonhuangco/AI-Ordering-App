@@ -13,6 +13,13 @@ interface Product {
   price: number
   unit: string
   isActive: boolean
+  beanOrigin?: string
+  roastLevel?: string
+  productionWeightPerUnit?: number
+  productionUnit?: string
+  productionNotes?: string
+  processingMethod?: string
+  flavorProfile?: string[]
 }
 
 export default function EditProductPage({ params }: { params: { id: string } }) {
@@ -103,6 +110,17 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
       return {
         ...prev,
         [name]: checked
+      }
+    })
+  }
+
+  const handleFlavorProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { value } = e.target
+    setProduct(prev => {
+      if (!prev) return prev
+      return {
+        ...prev,
+        flavorProfile: value ? value.split(',').map(item => item.trim()).filter(item => item) : []
       }
     })
   }
@@ -253,6 +271,115 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-coffee-brown focus:border-transparent"
                 />
+              </div>
+
+              {/* Production Details Section */}
+              <div className="border-t border-gray-200 pt-6">
+                <h3 className="text-lg font-medium text-gray-900 mb-4">Production Details</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label htmlFor="beanOrigin" className="block text-sm font-medium text-gray-700 mb-2">
+                      Bean Origin
+                    </label>
+                    <input
+                      type="text"
+                      id="beanOrigin"
+                      name="beanOrigin"
+                      value={product.beanOrigin || ''}
+                      onChange={handleInputChange}
+                      placeholder="e.g., Ethiopian, Brazilian, Colombian"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-coffee-brown focus:border-transparent"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="roastLevel" className="block text-sm font-medium text-gray-700 mb-2">
+                      Roast Level
+                    </label>
+                    <select
+                      id="roastLevel"
+                      name="roastLevel"
+                      value={product.roastLevel || ''}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-coffee-brown focus:border-transparent"
+                    >
+                      <option value="">Select roast level</option>
+                      <option value="Light">Light</option>
+                      <option value="Medium-Light">Medium-Light</option>
+                      <option value="Medium">Medium</option>
+                      <option value="Medium-Dark">Medium-Dark</option>
+                      <option value="Dark">Dark</option>
+                      <option value="French">French</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label htmlFor="productionWeightPerUnit" className="block text-sm font-medium text-gray-700 mb-2">
+                      Production Weight per Unit (lbs)
+                    </label>
+                    <input
+                      type="number"
+                      id="productionWeightPerUnit"
+                      name="productionWeightPerUnit"
+                      step="0.01"
+                      min="0"
+                      value={product.productionWeightPerUnit || ''}
+                      onChange={handleInputChange}
+                      placeholder="1.0"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-coffee-brown focus:border-transparent"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="processingMethod" className="block text-sm font-medium text-gray-700 mb-2">
+                      Processing Method
+                    </label>
+                    <select
+                      id="processingMethod"
+                      name="processingMethod"
+                      value={product.processingMethod || ''}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-coffee-brown focus:border-transparent"
+                    >
+                      <option value="">Select processing method</option>
+                      <option value="Washed">Washed</option>
+                      <option value="Natural">Natural</option>
+                      <option value="Honey">Honey</option>
+                      <option value="Semi-Washed">Semi-Washed</option>
+                      <option value="Wet-Hulled">Wet-Hulled</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="mt-4">
+                  <label htmlFor="productionNotes" className="block text-sm font-medium text-gray-700 mb-2">
+                    Production Notes
+                  </label>
+                  <textarea
+                    id="productionNotes"
+                    name="productionNotes"
+                    rows={3}
+                    value={product.productionNotes || ''}
+                    onChange={handleInputChange}
+                    placeholder="Special production instructions, notes, or requirements"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-coffee-brown focus:border-transparent"
+                  />
+                </div>
+
+                <div className="mt-4">
+                  <label htmlFor="flavorProfile" className="block text-sm font-medium text-gray-700 mb-2">
+                    Flavor Profile (comma-separated)
+                  </label>
+                  <input
+                    type="text"
+                    id="flavorProfile"
+                    name="flavorProfile"
+                    value={product.flavorProfile?.join(', ') || ''}
+                    onChange={handleFlavorProfileChange}
+                    placeholder="e.g., Chocolate, Nutty, Bright, Fruity"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-coffee-brown focus:border-transparent"
+                  />
+                </div>
               </div>
 
               <div className="flex items-center">

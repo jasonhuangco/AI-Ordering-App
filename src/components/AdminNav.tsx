@@ -28,6 +28,7 @@ export default function AdminNav({ currentPage }: AdminNavProps) {
     { href: '/admin/dashboard', label: 'Dashboard', icon: '📊' },
     { href: '/admin/products', label: 'Products', icon: '☕' },
     { href: '/admin/orders', label: 'Orders', icon: '📦' },
+    { href: '/admin/production', label: 'Production', icon: '⚡' },
     { href: '/admin/customers', label: 'Customers', icon: '👥' },
     { href: '/admin/analytics', label: 'Analytics', icon: '📈' },
     { href: '/admin/settings', label: 'Settings', icon: '⚙️' },

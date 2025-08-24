@@ -114,3 +114,19 @@
   - **Customers Page**: Eye icons for show/hide, list icon for orders, edit and delete icons
   - **Orders Page**: Archive/unarchive and view detail icons
   - **Benefits**: 70% space reduction, better mobile UX, consistent visual design
+- **CSV Import Feature**: Added bulk product import functionality:
+  - **Import API**: `/api/products/import` endpoint with comprehensive validation
+  - **Sample CSV**: 10 example products with proper format (`/sample-products-import.csv`)
+  - **Import Modal**: User-friendly interface with format instructions and error handling
+  - **Validation**: Real-time validation with detailed error reporting per row
+  - **Documentation**: Complete CSV import guide (`/docs/CSV_IMPORT_GUIDE.md`)
+- **Production Schedule System**: Added comprehensive production planning and tracking:
+  - **Production API**: `/api/admin/production` endpoint for aggregated production data
+  - **Production Page**: `/admin/production` with consolidated view of all orders by product
+  - **Date Filtering**: Flexible date range selection for production planning periods
+  - **Bulk Actions**: Select and update multiple order statuses simultaneously
+  - **Aggregated View**: Shows total quantities needed per product across all customers
+  - **Order Details**: Expandable view showing which orders contribute to each product
+  - **Category Summary**: Production requirements grouped by product category
+  - **Status Tracking**: Monitor production progress from pending to completed
+  - **Documentation**: Complete production schedule guide (`/docs/PRODUCTION_SCHEDULE.md`)

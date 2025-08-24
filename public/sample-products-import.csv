@@ -1,0 +1,11 @@
+name,description,category,price,unit,is_global,is_active
+"Ethiopian Single Origin","Premium single origin coffee beans from the highlands of Ethiopia. Notes of citrus and floral undertones.","WHOLE_BEANS","24.99","1 lb bag","true","true"
+"Colombian Supremo","Rich and full-bodied coffee with chocolate and nutty flavors from Colombian mountains.","WHOLE_BEANS","22.50","1 lb bag","true","true"
+"House Blend Espresso","Perfect blend for espresso shots with balanced acidity and crema.","ESPRESSO","19.99","1 lb bag","true","true"
+"French Roast Dark","Bold and smoky dark roast with low acidity.","WHOLE_BEANS","18.75","1 lb bag","true","true"
+"Decaf Colombian","Swiss water processed decaf with full flavor retention.","WHOLE_BEANS","23.99","1 lb bag","true","true"
+"Retail Pack - House Blend","Pre-packaged 12oz retail bags of our signature house blend.","RETAIL_PACKS","15.99","12 oz bag","false","true"
+"Coffee Grinder - Burr","Professional burr grinder for consistent grind size.","ACCESSORIES","89.99","1 unit","true","true"
+"Paper Filters - Size 4","Premium paper filters for drip coffee makers.","ACCESSORIES","4.99","100 count","true","true"
+"Cold Brew Concentrate","Ready-to-drink cold brew concentrate. Just add water or milk.","RETAIL_PACKS","12.99","32 oz bottle","false","true"
+"Organic Fair Trade","Certified organic and fair trade coffee beans from Central America.","WHOLE_BEANS","26.99","1 lb bag","true","true"

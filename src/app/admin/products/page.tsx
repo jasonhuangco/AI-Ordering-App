@@ -61,9 +61,16 @@ export default function AdminProductsPage() {
   const [bulkActionLoading, setBulkActionLoading] = useState(false)
   const bulkActionsRef = useRef<HTMLDivElement>(null)
   
+  // CSV Import state
+  const [showImportModal, setShowImportModal] = useState(false)
+  const [importFile, setImportFile] = useState<File | null>(null)
+  const [importLoading, setImportLoading] = useState(false)
+  const [importResults, setImportResults] = useState<any>(null)
+  
   // Sorting and filtering state
   const [sortField, setSortField] = useState<SortField>('name')
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc')
+  const [showFilters, setShowFilters] = useState(false)
   const [filters, setFilters] = useState<FilterState>({
     category: 'all',
     status: 'all',
@@ -382,6 +389,60 @@ export default function AdminProductsPage() {
     }
   }
 
+  // CSV Import functions
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (file && file.name.endsWith('.csv')) {
+      setImportFile(file)
+    } else {
+      alert('Please select a CSV file')
+      event.target.value = ''
+    }
+  }
+
+  const handleImport = async () => {
+    if (!importFile) {
+      alert('Please select a file first')
+      return
+    }
+
+    setImportLoading(true)
+    setImportResults(null)
+
+    try {
+      const formData = new FormData()
+      formData.append('file', importFile)
+
+      const response = await fetch('/api/products/import', {
+        method: 'POST',
+        body: formData,
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        setImportResults(data)
+        fetchProducts() // Refresh the product list
+      } else {
+        alert(data.error || 'Failed to import products')
+        if (data.details && Array.isArray(data.details)) {
+          console.error('Import errors:', data.details)
+        }
+      }
+    } catch (error) {
+      console.error('Import failed:', error)
+      alert('Failed to import products')
+    } finally {
+      setImportLoading(false)
+    }
+  }
+
+  const closeImportModal = () => {
+    setShowImportModal(false)
+    setImportFile(null)
+    setImportResults(null)
+  }
+
   // Sorting and filtering helper functions
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -436,6 +497,12 @@ export default function AdminProductsPage() {
               Add New Product
             </Link>
             <button
+              onClick={() => setShowImportModal(true)}
+              className="btn-secondary bg-blue-600 text-white hover:bg-blue-700 text-center"
+            >
+              Import CSV
+            </button>
+            <button
               onClick={() => {
                 setIsLoading(true)
                 fetchProducts()
@@ -451,9 +518,10 @@ export default function AdminProductsPage() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
         {/* Sorting and Filtering Controls */}
         <div className="mb-6 bg-white rounded-lg shadow p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+          {/* Always visible search and filter toggle */}
+          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-end mb-4">
             {/* Search */}
-            <div className="xl:col-span-2">
+            <div className="flex-1">
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Search Products
               </label>
@@ -466,85 +534,109 @@ export default function AdminProductsPage() {
               />
             </div>
 
-            {/* Category Filter */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Category
-              </label>
-              <select
-                value={filters.category}
-                onChange={(e) => handleFilterChange('category', e.target.value)}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-coffee-brown focus:border-coffee-brown"
+            {/* Filter Toggle Button */}
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className="btn-secondary bg-coffee-brown text-white hover:bg-espresso flex items-center space-x-2"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.207A1 1 0 013 6.5V4z" />
+              </svg>
+              <span>Filters</span>
+              <svg 
+                className={`w-4 h-4 transition-transform ${showFilters ? 'rotate-180' : ''}`} 
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
               >
-                <option value="all">All Categories</option>
-                {getUniqueCategories().map(category => (
-                  <option key={category} value={category}>
-                    {formatCategory(category)}
-                  </option>
-                ))}
-              </select>
-            </div>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+          </div>
 
-            {/* Status Filter */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Status
-              </label>
-              <select
-                value={filters.status}
-                onChange={(e) => handleFilterChange('status', e.target.value)}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-coffee-brown focus:border-coffee-brown"
-              >
-                <option value="all">All Status</option>
-                <option value="active">Active Only</option>
-                <option value="inactive">Inactive Only</option>
-              </select>
-            </div>
-
-            {/* Visibility Filter */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Visibility
-              </label>
-              <select
-                value={filters.visibility}
-                onChange={(e) => handleFilterChange('visibility', e.target.value)}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-coffee-brown focus:border-coffee-brown"
-              >
-                <option value="all">All Products</option>
-                <option value="global">Global Only</option>
-                <option value="exclusive">Exclusive Only</option>
-              </select>
-            </div>
-
-            {/* Sort Controls */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Sort By
-              </label>
-              <div className="flex space-x-2">
+          {/* Collapsible Filters */}
+          {showFilters && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pt-4 border-t border-gray-200">
+              {/* Category Filter */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Category
+                </label>
                 <select
-                  value={sortField}
-                  onChange={(e) => setSortField(e.target.value as SortField)}
-                  className="flex-1 border border-gray-300 rounded-md px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-coffee-brown focus:border-coffee-brown"
+                  value={filters.category}
+                  onChange={(e) => handleFilterChange('category', e.target.value)}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-coffee-brown focus:border-coffee-brown"
                 >
-                  <option value="name">Name</option>
-                  <option value="category">Category</option>
-                  <option value="price">Price</option>
-                  <option value="isActive">Status</option>
-                  <option value="isGlobal">Visibility</option>
-                  <option value="createdAt">Created</option>
+                  <option value="all">All Categories</option>
+                  {getUniqueCategories().map(category => (
+                    <option key={category} value={category}>
+                      {formatCategory(category)}
+                    </option>
+                  ))}
                 </select>
-                <button
-                  onClick={() => setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')}
-                  className="px-3 py-2 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-coffee-brown"
-                  title={`Sort ${sortDirection === 'asc' ? 'Descending' : 'Ascending'}`}
+              </div>
+
+              {/* Status Filter */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Status
+                </label>
+                <select
+                  value={filters.status}
+                  onChange={(e) => handleFilterChange('status', e.target.value)}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-coffee-brown focus:border-coffee-brown"
                 >
-                  {sortDirection === 'asc' ? '↑' : '↓'}
-                </button>
+                  <option value="all">All Status</option>
+                  <option value="active">Active Only</option>
+                  <option value="inactive">Inactive Only</option>
+                </select>
+              </div>
+
+              {/* Visibility Filter */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Visibility
+                </label>
+                <select
+                  value={filters.visibility}
+                  onChange={(e) => handleFilterChange('visibility', e.target.value)}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-coffee-brown focus:border-coffee-brown"
+                >
+                  <option value="all">All Products</option>
+                  <option value="global">Global Only</option>
+                  <option value="exclusive">Exclusive Only</option>
+                </select>
+              </div>
+
+              {/* Sort Controls */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Sort By
+                </label>
+                <div className="flex space-x-2">
+                  <select
+                    value={sortField}
+                    onChange={(e) => setSortField(e.target.value as SortField)}
+                    className="flex-1 border border-gray-300 rounded-md px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-coffee-brown focus:border-coffee-brown"
+                  >
+                    <option value="name">Name</option>
+                    <option value="category">Category</option>
+                    <option value="price">Price</option>
+                    <option value="isActive">Status</option>
+                    <option value="isGlobal">Visibility</option>
+                    <option value="createdAt">Created</option>
+                  </select>
+                  <button
+                    onClick={() => setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')}
+                    className="px-3 py-2 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-coffee-brown"
+                    title={`Sort ${sortDirection === 'asc' ? 'Descending' : 'Ascending'}`}
+                  >
+                    {sortDirection === 'asc' ? '↑' : '↓'}
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* Filter Summary and Clear */}
           <div className="mt-4 flex flex-wrap items-center justify-between">
@@ -871,6 +963,150 @@ export default function AdminProductsPage() {
           )}
         </div>
       </main>
+      
+      {/* CSV Import Modal */}
+      {showImportModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold text-coffee-dark">Import Products from CSV</h2>
+                <button
+                  onClick={closeImportModal}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd"/>
+                  </svg>
+                </button>
+              </div>
+
+              {!importResults ? (
+                <div className="space-y-4">
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <h3 className="font-medium text-blue-900 mb-2">CSV Format Requirements</h3>
+                    <p className="text-sm text-blue-700 mb-3">
+                      Your CSV file must include the following columns (in any order):
+                    </p>
+                    <ul className="text-sm text-blue-700 list-disc list-inside space-y-1">
+                      <li><strong>name</strong> - Product name (required)</li>
+                      <li><strong>description</strong> - Product description (required)</li>
+                      <li><strong>category</strong> - One of: WHOLE_BEANS, ESPRESSO, RETAIL_PACKS, ACCESSORIES (required)</li>
+                      <li><strong>price</strong> - Price as decimal number (required)</li>
+                      <li><strong>unit</strong> - Unit description like "1 lb bag" (required)</li>
+                      <li><strong>is_global</strong> - true/false (optional, defaults to true)</li>
+                      <li><strong>is_active</strong> - true/false (optional, defaults to true)</li>
+                    </ul>
+                  </div>
+
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <h3 className="font-medium text-green-900 mb-2">Sample CSV File</h3>
+                    <p className="text-sm text-green-700 mb-2">
+                      Download our sample CSV file to see the exact format:
+                    </p>
+                    <a
+                      href="/sample-products-import.csv"
+                      download
+                      className="inline-flex items-center px-3 py-2 border border-green-300 rounded-md text-sm font-medium text-green-700 bg-white hover:bg-green-50"
+                    >
+                      <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd"/>
+                      </svg>
+                      Download Sample CSV
+                    </a>
+                  </div>
+
+                  <div className="space-y-3">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Select CSV file to import
+                    </label>
+                    <input
+                      type="file"
+                      accept=".csv"
+                      onChange={handleFileSelect}
+                      className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-coffee-light file:text-coffee-dark hover:file:bg-coffee-brown hover:file:text-white"
+                    />
+                    {importFile && (
+                      <p className="text-sm text-green-600">
+                        Selected: {importFile.name} ({(importFile.size / 1024).toFixed(1)} KB)
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="flex justify-end space-x-3 pt-4">
+                    <button
+                      onClick={closeImportModal}
+                      className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleImport}
+                      disabled={!importFile || importLoading}
+                      className="px-4 py-2 bg-coffee-dark text-white rounded-md text-sm font-medium hover:bg-espresso disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {importLoading ? 'Importing...' : 'Import Products'}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className={`border rounded-lg p-4 ${
+                    importResults.results.failed === 0 
+                      ? 'bg-green-50 border-green-200' 
+                      : 'bg-yellow-50 border-yellow-200'
+                  }`}>
+                    <h3 className={`font-medium mb-2 ${
+                      importResults.results.failed === 0 
+                        ? 'text-green-900' 
+                        : 'text-yellow-900'
+                    }`}>
+                      Import Results
+                    </h3>
+                    <p className={`text-sm mb-2 ${
+                      importResults.results.failed === 0 
+                        ? 'text-green-700' 
+                        : 'text-yellow-700'
+                    }`}>
+                      {importResults.summary}
+                    </p>
+                    <div className="text-sm space-y-1">
+                      <div className="text-green-700">
+                        ✅ Successfully imported: {importResults.results.successful} products
+                      </div>
+                      {importResults.results.failed > 0 && (
+                        <div className="text-red-700">
+                          ❌ Failed imports: {importResults.results.failed} products
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {importResults.results.errors && importResults.results.errors.length > 0 && (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-4 max-h-60 overflow-y-auto">
+                      <h4 className="font-medium text-red-900 mb-2">Import Errors:</h4>
+                      <ul className="text-sm text-red-700 space-y-1">
+                        {importResults.results.errors.map((error: string, index: number) => (
+                          <li key={index}>{error}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  <div className="flex justify-end space-x-3 pt-4">
+                    <button
+                      onClick={closeImportModal}
+                      className="px-4 py-2 bg-coffee-dark text-white rounded-md text-sm font-medium hover:bg-espresso"
+                    >
+                      Close
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
