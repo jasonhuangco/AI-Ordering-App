@@ -643,12 +643,12 @@ export const getAdminStats = async () => {
   // Get total revenue from all non-cancelled orders
   const { data: revenueData, error: revenueError } = await supabaseAdmin
     .from('orders')
-    .select('total')
+    .select('total_amount')
     .not('status', 'eq', 'CANCELLED') // Exclude only cancelled orders
   
   if (revenueError) throw revenueError
   
-  const totalRevenue = revenueData?.reduce((sum, order) => sum + (Number(order.total) || 0), 0) || 0
+  const totalRevenue = revenueData?.reduce((sum, order) => sum + (Number(order.total_amount) || 0), 0) || 0
   
   // Get active customers count
   const { count: totalCustomers, error: customersError } = await supabaseAdmin
