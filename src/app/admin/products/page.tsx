@@ -993,7 +993,7 @@ export default function AdminProductsPage() {
                       <li><strong>description</strong> - Product description (required)</li>
                       <li><strong>category</strong> - One of: WHOLE_BEANS, ESPRESSO, RETAIL_PACKS, ACCESSORIES (required)</li>
                       <li><strong>price</strong> - Price as decimal number (required)</li>
-                      <li><strong>unit</strong> - Unit description like "1 lb bag" (required)</li>
+                      <li><strong>unit</strong> - Unit description like &quot;1 lb bag&quot; (required)</li>
                       <li><strong>is_global</strong> - true/false (optional, defaults to true)</li>
                       <li><strong>is_active</strong> - true/false (optional, defaults to true)</li>
                     </ul>

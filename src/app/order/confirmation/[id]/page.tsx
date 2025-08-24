@@ -160,7 +160,7 @@ export default function OrderConfirmationPage({ params }: { params: { id: string
           </div>
         </div>
 
-        {/* What's Next */}
+        {/* What is Next */}
         <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
           <h3 className="text-lg font-semibold text-coffee-dark mb-4 flex items-center">
             <span className="text-2xl mr-2">📋</span>
