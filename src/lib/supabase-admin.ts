@@ -96,6 +96,55 @@ export const deleteUser = async (id: string) => {
 }
 
 // Products
+// Get all products (for admin) with customer assignments
+export const getAllProductsWithCustomers = async () => {
+  const { data, error } = await supabaseAdmin
+    .from('products')
+    .select(`
+      *,
+      customer_products (
+        user_id,
+        custom_price,
+        users (
+          id,
+          email,
+          company_name,
+          contact_name
+        )
+      )
+    `)
+    .order('name')
+  
+  if (error) throw error
+  
+  // Convert snake_case to camelCase for frontend
+  const formattedProducts = data?.map(product => ({
+    id: product.id,
+    name: product.name,
+    description: product.description,
+    price: Number(product.price) || 0, // Ensure price is a number
+    category: product.category,
+    unit: product.unit,
+    isGlobal: product.is_global,
+    isActive: product.is_active,
+    imageUrl: product.image_url,
+    createdAt: product.created_at,
+    updatedAt: product.updated_at,
+    assignedCustomers: product.customer_products?.map((assignment: any) => ({
+      userId: assignment.user_id,
+      customPrice: assignment.custom_price,
+      customer: assignment.users ? {
+        id: assignment.users.id,
+        email: assignment.users.email,
+        companyName: assignment.users.company_name,
+        contactName: assignment.users.contact_name
+      } : null
+    })) || []
+  })) || []
+  
+  return formattedProducts
+}
+
 export const getAllProducts = async () => {
   const { data, error } = await supabaseAdmin
     .from('products')
@@ -179,6 +228,41 @@ export const updateProduct = async (id: string, updates: any) => {
   
   if (error) throw error
   return data
+}
+
+export const deleteProduct = async (id: string) => {
+  const { error } = await supabaseAdmin
+    .from('products')
+    .delete()
+    .eq('id', id)
+  
+  if (error) throw error
+  return true
+}
+
+// Bulk operations for products
+export const bulkUpdateProducts = async (productIds: string[], updates: any) => {
+  const { data, error } = await supabaseAdmin
+    .from('products')
+    .update({
+      ...updates,
+      updated_at: new Date().toISOString()
+    })
+    .in('id', productIds)
+    .select()
+  
+  if (error) throw error
+  return data
+}
+
+export const bulkDeleteProducts = async (productIds: string[]) => {
+  const { error } = await supabaseAdmin
+    .from('products')
+    .delete()
+    .in('id', productIds)
+  
+  if (error) throw error
+  return true
 }
 
 // Orders

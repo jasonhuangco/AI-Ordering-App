@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '../../../lib/auth'
-import { getAllProducts, createProduct, getCustomerVisibleProducts } from '../../../lib/supabase-admin'
+import { getAllProducts, getAllProductsWithCustomers, createProduct, getCustomerVisibleProducts } from '../../../lib/supabase-admin'
 
 export async function GET(request: NextRequest) {
   try {
@@ -12,11 +12,19 @@ export async function GET(request: NextRequest) {
       return NextResponse.json([])
     }
 
+    // Get URL search params
+    const { searchParams } = new URL(request.url)
+    const includeCustomers = searchParams.get('includeCustomers') === 'true'
+
     let products
     
     // Admin users can see all products
     if (session.user.role === 'ADMIN') {
-      products = await getAllProducts()
+      if (includeCustomers) {
+        products = await getAllProductsWithCustomers()
+      } else {
+        products = await getAllProducts()
+      }
     } else {
       // Customer users can only see global products + assigned products
       products = await getCustomerVisibleProducts(session.user.id)
