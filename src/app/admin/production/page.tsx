@@ -201,8 +201,8 @@ export default function ProductionSchedulePage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'COMPLETED': return 'text-green-600 bg-green-100'
-      case 'PROCESSING': return 'text-blue-600 bg-blue-100'
+      case 'SHIPPED': return 'text-green-600 bg-green-100'
+      case 'CONFIRMED': return 'text-blue-600 bg-blue-100'
       case 'PENDING': return 'text-yellow-600 bg-yellow-100'
       case 'CANCELLED': return 'text-red-600 bg-red-100'
       default: return 'text-gray-600 bg-gray-100'
@@ -282,8 +282,8 @@ export default function ProductionSchedulePage() {
               >
                 <option value="all">All Orders</option>
                 <option value="pending">Pending</option>
-                <option value="processing">Processing</option>
-                <option value="completed">Completed</option>
+                <option value="confirmed">Confirmed</option>
+                <option value="shipped">Shipped</option>
                 <option value="cancelled">Cancelled</option>
               </select>
             </div>
@@ -366,20 +366,27 @@ export default function ProductionSchedulePage() {
                   <span className="font-medium text-coffee-dark">
                     {selectedOrders.size} order(s) selected
                   </span>
-                  <div className="flex space-x-2">
+                                    <div className="flex space-x-2">
                     <button
-                      onClick={() => handleBulkStatusUpdate('PROCESSING')}
+                      onClick={() => handleBulkStatusUpdate('PENDING')}
+                      disabled={bulkActionLoading}
+                      className="px-3 py-2 bg-yellow-600 text-white text-sm rounded hover:bg-yellow-700 disabled:opacity-50"
+                    >
+                      Mark Pending
+                    </button>
+                    <button
+                      onClick={() => handleBulkStatusUpdate('CONFIRMED')}
                       disabled={bulkActionLoading}
                       className="px-3 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 disabled:opacity-50"
                     >
-                      Mark Processing
+                      Mark Confirmed
                     </button>
                     <button
-                      onClick={() => handleBulkStatusUpdate('COMPLETED')}
+                      onClick={() => handleBulkStatusUpdate('SHIPPED')}
                       disabled={bulkActionLoading}
                       className="px-3 py-2 bg-green-600 text-white text-sm rounded hover:bg-green-700 disabled:opacity-50"
                     >
-                      Mark Completed
+                      Mark Shipped
                     </button>
                     <button
                       onClick={() => setSelectedOrders(new Set())}

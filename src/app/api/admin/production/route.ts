@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '../../../../lib/auth'
 import { createClient } from '@supabase/supabase-js'
+import { generateOrderNumberWithSequence } from '../../../../lib/orderUtils'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -192,7 +193,11 @@ export async function GET(request: NextRequest) {
           productionItem.orderCount += 1
           productionItem.orders.push({
             orderId: order.id,
-            orderNumber: `ORD-${order.sequence_number}`,
+            orderNumber: generateOrderNumberWithSequence(
+              order.sequence_number, 
+              order.created_at, 
+              (order.user as any)?.customer_code
+            ),
             customerName: (order.user as any)?.company_name || (order.user as any)?.contact_name || (order.user as any)?.email || 'Unknown Customer',
             quantity: item.quantity,
             productionWeight: orderProductionWeight,
@@ -273,7 +278,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Order IDs are required' }, { status: 400 })
     }
 
-    if (!status || !['PENDING', 'PROCESSING', 'COMPLETED', 'CANCELLED'].includes(status)) {
+    if (!status || !['PENDING', 'CONFIRMED', 'SHIPPED', 'CANCELLED'].includes(status)) {
       return NextResponse.json({ error: 'Valid status is required' }, { status: 400 })
     }
 
