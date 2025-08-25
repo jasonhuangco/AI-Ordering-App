@@ -50,6 +50,7 @@ export async function GET(request: NextRequest) {
       `)
       .gte('created_at', startDate.toISOString())
       .lte('created_at', endDate.toISOString())
+      .not('status', 'eq', 'CANCELLED') // Exclude cancelled orders from analytics
       .order('created_at', { ascending: false })
 
     if (customerFilter) {

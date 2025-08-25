@@ -130,6 +130,9 @@ export async function GET(request: NextRequest) {
     if (status !== 'all') {
       ordersQuery = ordersQuery.eq('status', status.toUpperCase())
     }
+    
+    // Always exclude cancelled orders from production schedule
+    ordersQuery = ordersQuery.neq('status', 'CANCELLED')
 
     // Apply archive filter
     if (!includeArchived) {
@@ -159,7 +162,7 @@ export async function GET(request: NextRequest) {
         const productId = product.id
         
         if (!productionMap.has(productId)) {
-          const productionWeightPerUnit = product.production_weight_per_unit || 1.0
+          const productionWeightPerUnit = product.production_weight_per_unit || 5.0
           productionMap.set(productId, {
             productId: productId,
             productName: product.name,
@@ -182,7 +185,7 @@ export async function GET(request: NextRequest) {
         }
 
         const productionItem = productionMap.get(productId)!
-        const productionWeightPerUnit = productionItem.productionDetails.productionWeightPerUnit || 1.0
+        const productionWeightPerUnit = productionItem.productionDetails.productionWeightPerUnit || 5.0
         const orderProductionWeight = item.quantity * productionWeightPerUnit
         
         productionItem.totalQuantity += item.quantity

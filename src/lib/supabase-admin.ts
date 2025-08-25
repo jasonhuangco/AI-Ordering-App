@@ -717,10 +717,11 @@ export const getCustomerVisibleProducts = async (userId: string) => {
 
 // Admin statistics
 export const getAdminStats = async () => {
-  // Get total orders count
+  // Get total orders count (excluding cancelled orders)
   const { count: totalOrders, error: ordersError } = await supabaseAdmin
     .from('orders')
     .select('*', { count: 'exact', head: true })
+    .not('status', 'eq', 'CANCELLED')
   
   if (ordersError) throw ordersError
   
