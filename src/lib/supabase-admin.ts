@@ -128,6 +128,13 @@ export const getAllProductsWithCustomers = async () => {
     isGlobal: product.is_global,
     isActive: product.is_active,
     imageUrl: product.image_url,
+    beanOrigin: product.bean_origin,
+    roastLevel: product.roast_level,
+    productionWeightPerUnit: product.production_weight_per_unit,
+    productionUnit: product.production_unit,
+    productionNotes: product.production_notes,
+    processingMethod: product.processing_method,
+    flavorProfile: product.flavor_profile,
     createdAt: product.created_at,
     updatedAt: product.updated_at,
     assignedCustomers: product.customer_products?.map((assignment: any) => ({
@@ -165,6 +172,13 @@ export const getAllProducts = async () => {
     isGlobal: product.is_global,
     isActive: product.is_active,
     imageUrl: product.image_url,
+    beanOrigin: product.bean_origin,
+    roastLevel: product.roast_level,
+    productionWeightPerUnit: product.production_weight_per_unit,
+    productionUnit: product.production_unit,
+    productionNotes: product.production_notes,
+    processingMethod: product.processing_method,
+    flavorProfile: product.flavor_profile,
     createdAt: product.created_at,
     updatedAt: product.updated_at
   })) || []
@@ -685,6 +699,13 @@ export const getCustomerVisibleProducts = async (userId: string) => {
       isActive: product.is_active,
       isGlobal: product.is_global,
       imageUrl: product.image_url,
+      beanOrigin: product.bean_origin,
+      roastLevel: product.roast_level,
+      productionWeightPerUnit: product.production_weight_per_unit,
+      productionUnit: product.production_unit,
+      productionNotes: product.production_notes,
+      processingMethod: product.processing_method,
+      flavorProfile: product.flavor_profile,
       createdAt: product.created_at,
       updatedAt: product.updated_at
     }))
@@ -709,6 +730,13 @@ export const getCustomerVisibleProducts = async (userId: string) => {
       isActive: product.is_active,
       isGlobal: product.is_global,
       imageUrl: product.image_url,
+      beanOrigin: product.bean_origin,
+      roastLevel: product.roast_level,
+      productionWeightPerUnit: product.production_weight_per_unit,
+      productionUnit: product.production_unit,
+      productionNotes: product.production_notes,
+      processingMethod: product.processing_method,
+      flavorProfile: product.flavor_profile,
       createdAt: product.created_at,
       updatedAt: product.updated_at
     }))

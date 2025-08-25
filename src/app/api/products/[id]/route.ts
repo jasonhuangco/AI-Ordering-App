@@ -33,10 +33,18 @@ export async function GET(
       name: product.name,
       description: product.description,
       price: product.price,
+      unit: product.unit,
       category: product.category,
       isGlobal: product.is_global,
       isActive: product.is_active,
       imageUrl: product.image_url,
+      beanOrigin: product.bean_origin,
+      roastLevel: product.roast_level,
+      productionWeightPerUnit: product.production_weight_per_unit,
+      productionUnit: product.production_unit,
+      productionNotes: product.production_notes,
+      processingMethod: product.processing_method,
+      flavorProfile: product.flavor_profile,
       createdAt: product.created_at,
       updatedAt: product.updated_at
     }
@@ -62,7 +70,23 @@ export async function PATCH(
     }
 
     const body = await request.json()
-    const { name, description, price, category, isGlobal, isActive, imageUrl } = body
+    const { 
+      name, 
+      description, 
+      price, 
+      unit,
+      category, 
+      isGlobal, 
+      isActive, 
+      imageUrl,
+      beanOrigin,
+      roastLevel,
+      productionWeightPerUnit,
+      productionUnit,
+      productionNotes,
+      processingMethod,
+      flavorProfile
+    } = body
 
     // Check if product exists
     const { data: existingProduct, error: fetchError } = await supabaseAdmin
@@ -81,10 +105,18 @@ export async function PATCH(
     if (name !== undefined) updateData.name = name.trim()
     if (description !== undefined) updateData.description = description?.trim() || null
     if (price !== undefined) updateData.price = parseFloat(price)
+    if (unit !== undefined) updateData.unit = unit?.trim() || null
     if (category !== undefined) updateData.category = category
     if (isGlobal !== undefined) updateData.is_global = Boolean(isGlobal)
     if (isActive !== undefined) updateData.is_active = Boolean(isActive)
     if (imageUrl !== undefined) updateData.image_url = imageUrl?.trim() || null
+    if (beanOrigin !== undefined) updateData.bean_origin = beanOrigin?.trim() || null
+    if (roastLevel !== undefined) updateData.roast_level = roastLevel?.trim() || null
+    if (productionWeightPerUnit !== undefined) updateData.production_weight_per_unit = productionWeightPerUnit ? parseFloat(productionWeightPerUnit) : null
+    if (productionUnit !== undefined) updateData.production_unit = productionUnit?.trim() || null
+    if (productionNotes !== undefined) updateData.production_notes = productionNotes?.trim() || null
+    if (processingMethod !== undefined) updateData.processing_method = processingMethod?.trim() || null
+    if (flavorProfile !== undefined) updateData.flavor_profile = flavorProfile || null
 
     const { data: updatedProduct, error: updateError } = await supabaseAdmin
       .from('products')
@@ -104,10 +136,18 @@ export async function PATCH(
       name: updatedProduct.name,
       description: updatedProduct.description,
       price: updatedProduct.price,
+      unit: updatedProduct.unit,
       category: updatedProduct.category,
       isGlobal: updatedProduct.is_global,
       isActive: updatedProduct.is_active,
       imageUrl: updatedProduct.image_url,
+      beanOrigin: updatedProduct.bean_origin,
+      roastLevel: updatedProduct.roast_level,
+      productionWeightPerUnit: updatedProduct.production_weight_per_unit,
+      productionUnit: updatedProduct.production_unit,
+      productionNotes: updatedProduct.production_notes,
+      processingMethod: updatedProduct.processing_method,
+      flavorProfile: updatedProduct.flavor_profile,
       createdAt: updatedProduct.created_at,
       updatedAt: updatedProduct.updated_at
     }
