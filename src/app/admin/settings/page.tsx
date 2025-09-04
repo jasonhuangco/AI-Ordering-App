@@ -199,15 +199,15 @@ export default function AdminSettingsPage() {
 
   const resetBrandingToDefaults = () => {
     const defaultBranding = {
-      companyName: 'Roaster Ordering',
-      primaryColor: '#8B4513',
-      secondaryColor: '#D2B48C',
-      accentColor: '#DAA520',
-      backgroundColor: '#F5F5DC',
-      buttonColor: '#8B4513',
-      logoText: 'Roaster Ordering',
+      companyName: 'Owlvericks',
+      primaryColor: '#4d4c4c',
+      secondaryColor: '#d9d9d9',
+      accentColor: '#9f8950',
+      backgroundColor: '#f0f0ef',
+      buttonColor: '#675d56',
+      logoText: 'Owlvericks',
       logoUrl: null,
-      tagline: 'Premium Wholesale Coffee',
+      tagline: 'Premium Business Solutions',
       fontFamily: 'Inter',
       theme: 'light' as const
     }

@@ -34,20 +34,20 @@ export default function RootLayout({
                     const branding = JSON.parse(cachedBranding);
                     const root = document.documentElement;
                     // Set CSS custom properties that match Tailwind config
-                    root.style.setProperty('--color-primary', branding.primaryColor || '#8B4513');
-                    root.style.setProperty('--color-secondary', branding.secondaryColor || '#D2B48C');
-                    root.style.setProperty('--color-accent', branding.accentColor || '#DAA520');
-                    root.style.setProperty('--color-background', branding.backgroundColor || '#F5F5DC');
-                    root.style.setProperty('--color-button', branding.buttonColor || '#8B4513');
-                    root.style.setProperty('--color-coffee-dark', branding.primaryColor || '#8B4513');
-                    root.style.setProperty('--color-espresso', branding.primaryColor || '#8B4513');
+                    root.style.setProperty('--color-primary', branding.primaryColor || '#4d4c4c');
+                    root.style.setProperty('--color-secondary', branding.secondaryColor || '#d9d9d9');
+                    root.style.setProperty('--color-accent', branding.accentColor || '#9f8950');
+                    root.style.setProperty('--color-background', branding.backgroundColor || '#f0f0ef');
+                    root.style.setProperty('--color-button', branding.buttonColor || '#675d56');
+                    root.style.setProperty('--color-coffee-dark', branding.primaryColor || '#4d4c4c');
+                    root.style.setProperty('--color-espresso', branding.primaryColor || '#4d4c4c');
                     // Also apply background to body if it exists
                     if (document.body) {
-                      document.body.style.backgroundColor = branding.backgroundColor || '#F5F5DC';
+                      document.body.style.backgroundColor = branding.backgroundColor || '#f0f0ef';
                     } else {
                       // If body doesn't exist yet, wait for it
                       document.addEventListener('DOMContentLoaded', function() {
-                        document.body.style.backgroundColor = branding.backgroundColor || '#F5F5DC';
+                        document.body.style.backgroundColor = branding.backgroundColor || '#f0f0ef';
                       });
                     }
                   }

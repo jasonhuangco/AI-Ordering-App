@@ -31,7 +31,7 @@ interface BrandingContextType {
 }
 
 const defaultBranding: BrandingSettings = {
-  companyName: 'Owlvericks'
+  companyName: 'Owlvericks',
   primaryColor: '#4d4c4c',
   secondaryColor: '#d9d9d9',
   accentColor: '#9f8950',
