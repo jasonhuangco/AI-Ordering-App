@@ -29,7 +29,7 @@ export default function RootLayout({
               // Apply cached branding immediately to prevent FOUC
               (function() {
                 try {
-                  const cachedBranding = localStorage.getItem('brandingSettings');
+                  const cachedBranding = localStorage.getItem('branding-settings');
                   if (cachedBranding) {
                     const branding = JSON.parse(cachedBranding);
                     const root = document.documentElement;
@@ -41,12 +41,18 @@ export default function RootLayout({
                     root.style.setProperty('--color-button', branding.buttonColor || '#8B4513');
                     root.style.setProperty('--color-coffee-dark', branding.primaryColor || '#8B4513');
                     root.style.setProperty('--color-espresso', branding.primaryColor || '#8B4513');
+                    // Also apply background to body if it exists
                     if (document.body) {
                       document.body.style.backgroundColor = branding.backgroundColor || '#F5F5DC';
+                    } else {
+                      // If body doesn't exist yet, wait for it
+                      document.addEventListener('DOMContentLoaded', function() {
+                        document.body.style.backgroundColor = branding.backgroundColor || '#F5F5DC';
+                      });
                     }
                   }
                 } catch (e) {
-                  console.log('No cached branding found');
+                  console.log('No cached branding found, using defaults');
                 }
               })();
             `,

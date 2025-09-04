@@ -31,13 +31,13 @@ interface BrandingContextType {
 }
 
 const defaultBranding: BrandingSettings = {
-  companyName: 'Roaster Ordering',
-  primaryColor: '#8B4513',
-  secondaryColor: '#D2B48C',
-  accentColor: '#DAA520',
-  backgroundColor: '#F5F5DC',
-  buttonColor: '#8B4513',
-  logoText: 'Roaster Ordering',
+  companyName: 'Owlvericks'
+  primaryColor: '#4d4c4c',
+  secondaryColor: '#d9d9d9',
+  accentColor: '#9f8950',
+  backgroundColor: '#f0f0ef',
+  buttonColor: '#675d56',
+  logoText: 'Made Simple',
   logoUrl: null,
   tagline: 'Premium Wholesale Coffee',
   fontFamily: 'Inter',
@@ -48,14 +48,32 @@ const defaultBranding: BrandingSettings = {
   heroDescription: 'Streamline your weekly coffee orders with our intuitive platform. Designed for cafés, restaurants, and retailers who demand quality and convenience.',
   showStats: true,
   showFeatures: true,
-  contactEmail: 'support@roasterordering.com',
+  contactEmail: 'orders@owlevericks.com',
   contactPhone: '1-800-ROASTER'
 }
 
 const BrandingContext = createContext<BrandingContextType | undefined>(undefined)
 
 export function BrandingProvider({ children }: { children: React.ReactNode }) {
-  const [branding, setBranding] = useState<BrandingSettings>(defaultBranding)
+  // Try to load cached branding from localStorage first to prevent flash
+  const getInitialBranding = (): BrandingSettings => {
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = localStorage.getItem('branding-settings')
+        if (cached) {
+          const cachedBranding = JSON.parse(cached)
+          // Merge cached with defaults to ensure all fields exist
+          return { ...defaultBranding, ...cachedBranding }
+        }
+      } catch (error) {
+        console.warn('Failed to load cached branding settings:', error)
+      }
+    }
+    return defaultBranding
+  }
+
+  const [branding, setBranding] = useState<BrandingSettings>(getInitialBranding)
+  const [isLoading, setIsLoading] = useState(true)
 
     const refreshBranding = async () => {
     try {
@@ -63,17 +81,27 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
       const response = await fetch('/api/branding')
       if (response.ok) {
         const settings = await response.json()
-        setBranding(settings)
-        applyBrandingToDOM(settings)
+        const mergedSettings = { ...defaultBranding, ...settings }
+        setBranding(mergedSettings)
+        applyBrandingToDOM(mergedSettings)
+        
+        // Cache the settings to prevent flash on next load
+        try {
+          localStorage.setItem('branding-settings', JSON.stringify(mergedSettings))
+        } catch (error) {
+          console.warn('Failed to cache branding settings:', error)
+        }
       } else {
-        console.warn('Failed to fetch branding settings, using defaults')
-        setBranding(defaultBranding)
-        applyBrandingToDOM(defaultBranding)
+        console.warn('Failed to fetch branding settings, using cached or defaults')
+        // Don't override cached settings on fetch failure
+        applyBrandingToDOM(branding)
       }
     } catch (error) {
       console.error('Error fetching branding settings:', error)
-      setBranding(defaultBranding)
-      applyBrandingToDOM(defaultBranding)
+      // Don't override cached settings on fetch error
+      applyBrandingToDOM(branding)
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -81,6 +109,13 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
     const updated = { ...branding, ...newBranding }
     setBranding(updated)
     applyBrandingToDOM(updated)
+    
+    // Cache the updated settings
+    try {
+      localStorage.setItem('branding-settings', JSON.stringify(updated))
+    } catch (error) {
+      console.warn('Failed to cache updated branding settings:', error)
+    }
   }
 
   const applyBrandingToDOM = (brandingSettings: BrandingSettings) => {
@@ -117,6 +152,10 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
   }
 
   useEffect(() => {
+    // Apply cached branding immediately to prevent flash
+    applyBrandingToDOM(branding)
+    
+    // Then fetch latest settings in the background
     refreshBranding()
   }, [])
 

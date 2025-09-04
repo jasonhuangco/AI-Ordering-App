@@ -197,6 +197,26 @@ export default function AdminSettingsPage() {
     }
   }
 
+  const resetBrandingToDefaults = () => {
+    const defaultBranding = {
+      companyName: 'Roaster Ordering',
+      primaryColor: '#8B4513',
+      secondaryColor: '#D2B48C',
+      accentColor: '#DAA520',
+      backgroundColor: '#F5F5DC',
+      buttonColor: '#8B4513',
+      logoText: 'Roaster Ordering',
+      logoUrl: null,
+      tagline: 'Premium Wholesale Coffee',
+      fontFamily: 'Inter',
+      theme: 'light' as const
+    }
+    
+    if (confirm('Are you sure you want to reset all branding settings to defaults? This will overwrite all current customizations.')) {
+      setLocalBranding(defaultBranding)
+    }
+  }
+
   const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (!file) return
@@ -930,24 +950,34 @@ export default function AdminSettingsPage() {
                 </div>
               </div>
 
-              <button
-                onClick={saveBrandingSettings}
-                disabled={isSaving}
-                className="px-6 py-3 text-white font-medium rounded-lg hover:opacity-90 transition-all duration-200 disabled:opacity-50 flex items-center gap-2"
-                style={{ backgroundColor: localBranding.buttonColor || '#8B4513' }}
-              >
-                {isSaving ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                    Applying Changes...
-                  </>
-                ) : (
-                  <>
-                    <span>🎨</span>
-                    Apply Branding Changes
-                  </>
-                )}
-              </button>
+              <div className="flex gap-4">
+                <button
+                  onClick={resetBrandingToDefaults}
+                  className="px-6 py-3 text-coffee-dark font-medium rounded-lg border border-coffee-light/30 hover:bg-coffee-light/10 transition-all duration-200 flex items-center gap-2"
+                >
+                  <span>🔄</span>
+                  Reset to Defaults
+                </button>
+                
+                <button
+                  onClick={saveBrandingSettings}
+                  disabled={isSaving}
+                  className="px-6 py-3 text-white font-medium rounded-lg hover:opacity-90 transition-all duration-200 disabled:opacity-50 flex items-center gap-2"
+                  style={{ backgroundColor: localBranding.buttonColor || '#8B4513' }}
+                >
+                  {isSaving ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      Applying Changes...
+                    </>
+                  ) : (
+                    <>
+                      <span>🎨</span>
+                      Apply Branding Changes
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           )}
 
