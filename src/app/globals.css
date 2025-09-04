@@ -38,6 +38,17 @@
   body {
     font-feature-settings: 'rlig' 1, 'calt' 1;
   }
+  
+  /* Mobile-first responsive improvements */
+  @media (max-width: 640px) {
+    html {
+      font-size: 14px;
+    }
+    
+    body {
+      line-height: 1.5;
+    }
+  }
 }
 
 @layer components {
@@ -62,6 +73,22 @@
   
   .text-heading {
     @apply font-heading font-semibold text-coffee-dark;
+  }
+  
+  /* Mobile touch improvements */
+  @media (max-width: 640px) {
+    .btn-coffee,
+    .btn-coffee-outline,
+    .btn-primary,
+    .btn-secondary {
+      min-height: 44px; /* iOS recommended touch target */
+      touch-action: manipulation; /* Prevents zoom on tap */
+    }
+    
+    /* Better spacing for mobile cards */
+    .card-coffee {
+      @apply p-4;
+    }
   }
 }
 
