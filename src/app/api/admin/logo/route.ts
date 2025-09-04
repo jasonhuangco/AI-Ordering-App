@@ -5,6 +5,9 @@ import { updateBrandingSettings } from '../../../../lib/supabase-admin'
 import { writeFile, mkdir } from 'fs/promises'
 import { join } from 'path'
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic'
+
 export async function POST(request: NextRequest) {
   try {
     console.log('🖼️ Logo upload request received')

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
+import { formatPriceForUser, type UserRole } from '../../lib/priceVisibility'
 
 interface Product {
   id: string
@@ -12,6 +13,7 @@ interface Product {
   unit: string
   price: number
   is_active: boolean
+  hidePrices?: boolean
 }
 
 export default function ProductsPage() {
@@ -67,7 +69,12 @@ export default function ProductsPage() {
               <p className="text-gray-600 mb-4">{product.description}</p>
               <div className="flex justify-between items-center">
                 <span className="text-coffee-brown font-medium">
-                  ${product.price} / {product.unit}
+                  {formatPriceForUser(
+                    session?.user?.role as UserRole || 'EMPLOYEE',
+                    product.price,
+                    product
+                  )}
+                  {product.unit && ` / ${product.unit}`}
                 </span>
                 <span className="text-sm text-gray-500 capitalize">
                   {product.category?.replace('_', ' ').toLowerCase() || 'other'}

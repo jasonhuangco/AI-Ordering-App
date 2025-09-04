@@ -136,6 +136,14 @@ export default function LoginPage() {
           </form>
 
           <div className="mt-6 text-center">
+            <div className="mb-4">
+              <Link 
+                href="/forgot-password" 
+                className="text-sm text-coffee-brown hover:text-coffee-dark transition-colors font-body font-medium"
+              >
+                Forgot your password?
+              </Link>
+            </div>
             <p className="text-sm text-coffee-dark/70 font-body">
               Need help accessing your account?{' '}
               <a href={`mailto:${branding.contactEmail || 'support@roasterordering.com'}`} className="font-medium text-coffee-brown hover:text-coffee-dark transition-colors">

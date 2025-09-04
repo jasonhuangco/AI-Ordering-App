@@ -7,6 +7,7 @@ import Link from 'next/link'
 import CustomerNav from '../../components/CustomerNav'
 import { generateOrderNumberWithSequence } from '../../lib/orderUtils'
 import { useBranding } from '../../components/BrandingProvider'
+import { formatTotalForUser, type UserRole } from '../../lib/priceVisibility'
 
 interface Order {
   id: string
@@ -14,6 +15,7 @@ interface Order {
   total: number
   status: string
   createdAt: string
+  hasHiddenItems?: boolean
   items: {
     id: string
     quantity: number
@@ -21,6 +23,7 @@ interface Order {
     product: {
       name: string
       category: string
+      hidePrices?: boolean
     }
   }[]
 }
@@ -53,7 +56,15 @@ export default function DashboardPage() {
       const response = await fetch('/api/orders')
       if (response.ok) {
         const data = await response.json()
-        setOrders(data)
+        // Calculate hasHiddenItems for each order based on user role
+        const ordersWithHiddenFlag = data.map((order: any) => ({
+          ...order,
+          hasHiddenItems: order.items?.some((item: any) => 
+            item.product?.hidePrices && 
+            (session?.user?.role === 'EMPLOYEE')
+          ) || false
+        }))
+        setOrders(ordersWithHiddenFlag)
       }
     } catch (error) {
       console.error('Failed to fetch orders:', error)
@@ -87,8 +98,51 @@ export default function DashboardPage() {
       case 'pending': return 'bg-yellow-100 text-yellow-800'
       case 'confirmed': return 'bg-blue-100 text-blue-800'
       case 'shipped': return 'bg-green-100 text-green-800'
+      case 'delivered': return 'bg-green-100 text-green-800'
       case 'cancelled': return 'bg-red-100 text-red-800'
       default: return 'bg-gray-100 text-gray-800'
+    }
+  }
+
+  const handleReorder = async (orderId: string) => {
+    try {
+      // Fetch the full order details
+      const response = await fetch(`/api/orders/${orderId}`)
+      if (!response.ok) {
+        throw new Error('Failed to fetch order details')
+      }
+
+      const order = await response.json()
+      
+      // Create cart items from order items matching the structure expected by /order/new
+      const cartItems = order.items
+        .filter((item: any) => item.product) // Only include items with valid products
+        .map((item: any) => ({
+          product: {
+            id: item.product.id,
+            name: item.product.name,
+            description: item.product.description,
+            category: item.product.category,
+            price: item.product.price,
+            unit: item.product.unit,
+            isActive: item.product.isActive,
+            hidePrices: item.product.hidePrices
+          },
+          quantity: item.quantity
+        }))
+
+      if (cartItems.length === 0) {
+        alert('No valid products found in this order to reorder.')
+        return
+      }
+
+      // Save to localStorage and redirect to new order page
+      localStorage.setItem('orderCart', JSON.stringify(cartItems))
+      router.push('/order/new')
+      
+    } catch (error) {
+      console.error('Failed to reorder:', error)
+      alert('Failed to reorder. Please try again.')
     }
   }
 
@@ -116,7 +170,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Quick Actions */}
-        <div className="mb-8 grid md:grid-cols-3 gap-4">
+        <div className="mb-8 grid md:grid-cols-2 gap-4">
           <Link
             href="/order/new"
             className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow border-l-4 border-coffee-brown"
@@ -126,19 +180,6 @@ export default function DashboardPage() {
               <div>
                 <h3 className="font-semibold text-coffee-dark">Place New Order</h3>
                 <p className="text-sm text-coffee-dark opacity-70">Browse and order products</p>
-              </div>
-            </div>
-          </Link>
-
-          <Link
-            href="/order/repeat"
-            className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow border-l-4 border-coffee-light"
-          >
-            <div className="flex items-center">
-              <div className="text-2xl mr-4">🔄</div>
-              <div>
-                <h3 className="font-semibold text-coffee-dark">Repeat Last Order</h3>
-                <p className="text-sm text-coffee-dark opacity-70">Quick reorder</p>
               </div>
             </div>
           </Link>
@@ -191,7 +232,11 @@ export default function DashboardPage() {
                         {order.status}
                       </div>
                       <p className="text-lg font-semibold text-coffee-dark mt-1">
-                        ${(order.total || 0).toFixed(2)}
+                        {formatTotalForUser(
+                          session?.user?.role as UserRole || 'EMPLOYEE',
+                          order.total || 0,
+                          order.hasHiddenItems || false
+                        )}
                       </p>
                     </div>
                   </div>
@@ -216,10 +261,7 @@ export default function DashboardPage() {
                     </Link>
                     <button
                       className="text-coffee-brown hover:text-coffee-dark text-sm font-medium"
-                      onClick={() => {
-                        // Implement reorder functionality
-                        console.log('Reorder:', order.id)
-                      }}
+                      onClick={() => handleReorder(order.id)}
                     >
                       Reorder
                     </button>

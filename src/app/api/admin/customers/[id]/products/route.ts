@@ -3,6 +3,9 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '../../../../../../lib/auth'
 import { supabaseAdmin } from '../../../../../../lib/supabase-admin'
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic'
+
 // GET /api/admin/customers/[id]/products - Get products and assignment status for a customer
 export async function GET(
   request: NextRequest,

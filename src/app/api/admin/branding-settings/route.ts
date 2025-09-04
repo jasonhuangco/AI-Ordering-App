@@ -3,6 +3,9 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '../../../../lib/auth'
 import { getBrandingSettings, updateBrandingSettings } from '../../../../lib/supabase-admin'
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic'
+
 // Convert database snake_case to frontend camelCase
 function convertToFrontendFormat(dbSettings: any) {
   if (!dbSettings) return null

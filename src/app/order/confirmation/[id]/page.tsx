@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { generateOrderNumberWithSequence } from '../../../../lib/orderUtils'
 import { useBranding } from '../../../../components/BrandingProvider'
+import { canUserSeePrices, hasHiddenPricesForUser, formatTotalForUser, UserRole } from '../../../../lib/priceVisibility'
 
 interface Order {
   id: string
@@ -26,6 +27,7 @@ interface Order {
       name: string
       category: string
       unit: string
+      hidePrices?: boolean
     }
   }[]
 }
@@ -46,7 +48,7 @@ export default function OrderConfirmationPage({ params }: { params: { id: string
   }, [status, session, router])
 
   useEffect(() => {
-    if (session?.user?.role === 'CUSTOMER' && params.id) {
+    if (session?.user?.role !== 'ADMIN' && params.id) {
       fetchOrder()
     }
   }, [session, params.id])
@@ -74,13 +76,18 @@ export default function OrderConfirmationPage({ params }: { params: { id: string
     return order.items.reduce((total, item) => total + item.quantity, 0)
   }
 
+  const hasHiddenPriceItems = () => {
+    if (!order || !session?.user?.role) return false
+    return hasHiddenPricesForUser(session.user.role as UserRole, order.items)
+  }
+
   if (status === 'loading' || isLoading) {
     return <div className="min-h-screen bg-cream flex items-center justify-center">
       <div className="text-coffee-brown text-xl">Processing your order...</div>
     </div>
   }
 
-  if (!session?.user || session.user.role !== 'CUSTOMER' || !order) {
+  if (!session?.user || session.user.role === 'ADMIN' || !order) {
     return null
   }
 
@@ -133,7 +140,9 @@ export default function OrderConfirmationPage({ params }: { params: { id: string
                 </p>
               </div>
               <div className="text-right">
-                <div className="text-2xl font-bold">${order.total.toFixed(2)}</div>
+                <div className="text-2xl font-bold">
+                  {formatTotalForUser(session?.user?.role as UserRole, order.total, hasHiddenPriceItems())}
+                </div>
                 <div className="text-coffee-light text-sm">
                   {getTotalItems()} item{getTotalItems() !== 1 ? 's' : ''}
                 </div>
@@ -152,13 +161,32 @@ export default function OrderConfirmationPage({ params }: { params: { id: string
                     <span className="text-gray-600 ml-2">× {item.quantity}</span>
                   </div>
                   <span className="font-medium text-coffee-brown">
-                    ${(item.unitPrice * item.quantity).toFixed(2)}
+                    {canUserSeePrices(session?.user?.role as UserRole, item.product) ? (
+                      `$${(item.unitPrice * item.quantity).toFixed(2)}`
+                    ) : (
+                      `${item.quantity} ${item.product.unit}${item.quantity !== 1 ? 's' : ''}`
+                    )}
                   </span>
                 </div>
               ))}
             </div>
           </div>
         </div>
+
+        {/* Hidden Prices Note */}
+        {hasHiddenPriceItems() && (
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-8">
+            <div className="flex items-center">
+              <svg className="w-5 h-5 text-amber-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+              <div>
+                <p className="text-amber-800 font-medium">Custom Pricing Applied</p>
+                <p className="text-amber-700 text-sm">Some items in your order have custom pricing. Final pricing will be confirmed during order processing.</p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* What is Next */}
         <div className="bg-white rounded-lg shadow-lg p-6 mb-8">

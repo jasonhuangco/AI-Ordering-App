@@ -3,6 +3,9 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '../../../../../lib/auth'
 import { supabaseAdmin } from '../../../../../lib/supabase-admin'
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic'
+
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -23,12 +26,11 @@ export async function GET(
       .from('users')
       .select('id, email, role, is_active, created_at, company_name, contact_name, phone, address, notes, customer_code')
       .eq('id', params.id)
-      .eq('role', 'CUSTOMER')
       .single()
 
     if (error) {
       console.error('❌ Database error:', error)
-      return NextResponse.json({ error: 'Customer not found' }, { status: 404 })
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
     // Convert to frontend format
@@ -70,18 +72,17 @@ export async function PATCH(
     }
 
     const body = await request.json()
-    const { email, companyName, contactName, phone, address, notes, isActive } = body
+    const { email, companyName, contactName, phone, address, notes, isActive, role } = body
 
-    // Check if customer exists
+    // Check if user exists
     const { data: existingCustomer, error: fetchError } = await supabaseAdmin
       .from('users')
       .select('id')
       .eq('id', params.id)
-      .eq('role', 'CUSTOMER')
       .single()
 
     if (fetchError) {
-      return NextResponse.json({ error: 'Customer not found' }, { status: 404 })
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
     // Check email uniqueness if email is being updated
@@ -108,6 +109,15 @@ export async function PATCH(
     if (address !== undefined) updateData.address = address?.trim() || null
     if (notes !== undefined) updateData.notes = notes?.trim() || null
     if (isActive !== undefined) updateData.is_active = Boolean(isActive)
+    
+    // Handle role updates
+    if (role !== undefined) {
+      const validRoles = ['ADMIN', 'MANAGER', 'EMPLOYEE']
+      if (!validRoles.includes(role)) {
+        return NextResponse.json({ error: 'Invalid role' }, { status: 400 })
+      }
+      updateData.role = role
+    }
 
     const { data: updatedCustomer, error: updateError } = await supabaseAdmin
       .from('users')
@@ -160,16 +170,15 @@ export async function DELETE(
       )
     }
 
-    // Check if customer exists
+    // Check if user exists
     const { data: customer, error: fetchError } = await supabaseAdmin
       .from('users')
       .select('id')
       .eq('id', params.id)
-      .eq('role', 'CUSTOMER')
       .single()
 
     if (fetchError) {
-      return NextResponse.json({ error: 'Customer not found' }, { status: 404 })
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
     // Check if customer has orders

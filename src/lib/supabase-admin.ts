@@ -48,17 +48,29 @@ export const getUserByEmail = async (email: string) => {
 export const createUser = async (userData: {
   id: string
   email: string
-  role?: 'ADMIN' | 'CUSTOMER'
+  role?: 'ADMIN' | 'MANAGER' | 'EMPLOYEE'
   company_name?: string
   contact_name?: string
   phone?: string
   address?: string
 }) => {
+  // Get the next customer code by finding the max existing one
+  const { data: maxResult } = await supabaseAdmin
+    .from('users')
+    .select('customer_code')
+    .not('customer_code', 'is', null)
+    .order('customer_code', { ascending: false })
+    .limit(1)
+    .single()
+  
+  const nextCustomerCode = maxResult?.customer_code ? maxResult.customer_code + 1 : 1001
+
   const { data, error } = await supabaseAdmin
     .from('users')
     .insert({
       ...userData,
-      role: userData.role || 'CUSTOMER',
+      customer_code: nextCustomerCode,
+      role: userData.role || 'EMPLOYEE',
       is_active: true,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
@@ -127,6 +139,7 @@ export const getAllProductsWithCustomers = async () => {
     unit: product.unit,
     isGlobal: product.is_global,
     isActive: product.is_active,
+    hidePrices: product.hide_prices,
     imageUrl: product.image_url,
     beanOrigin: product.bean_origin,
     roastLevel: product.roast_level,
@@ -171,6 +184,7 @@ export const getAllProducts = async () => {
     unit: product.unit,
     isGlobal: product.is_global,
     isActive: product.is_active,
+    hidePrices: product.hide_prices,
     imageUrl: product.image_url,
     beanOrigin: product.bean_origin,
     roastLevel: product.roast_level,
@@ -327,6 +341,7 @@ export const getOrdersByUserId = async (userId: string) => {
         category: item.products.category,
         unit: item.products.unit,
         price: item.products.price,
+        hidePrices: item.products.hide_prices,
         isGlobal: item.products.is_global,
         isActive: item.products.is_active,
         imageUrl: item.products.image_url,
@@ -414,6 +429,7 @@ export const getAllOrders = async (options?: {
         category: item.products.category,
         unit: item.products.unit,
         price: item.products.price,
+        hidePrices: item.products.hide_prices,
         isGlobal: item.products.is_global,
         isActive: item.products.is_active,
         imageUrl: item.products.image_url,
@@ -599,7 +615,6 @@ export const getAllCustomers = async () => {
   const { data, error } = await supabaseAdmin
     .from('users')
     .select('*')
-    .eq('role', 'CUSTOMER')
     .order('company_name', { ascending: true })
   
   if (error) throw error
@@ -613,6 +628,7 @@ export const getAllCustomers = async () => {
     phone: customer.phone,
     address: customer.address,
     notes: customer.notes,
+    role: customer.role,
     isActive: customer.is_active,
     createdAt: customer.created_at
   })) || []
@@ -694,10 +710,11 @@ export const getCustomerVisibleProducts = async (userId: string) => {
       name: product.name,
       description: product.description,
       category: product.category,
-      price: Number(product.price) || 0, // Ensure price is a number
+      price: product.hide_prices ? null : (Number(product.price) || 0), // Hide price if hide_prices is true
       unit: product.unit,
       isActive: product.is_active,
       isGlobal: product.is_global,
+      hidePrices: product.hide_prices,
       imageUrl: product.image_url,
       beanOrigin: product.bean_origin,
       roastLevel: product.roast_level,
@@ -725,10 +742,11 @@ export const getCustomerVisibleProducts = async (userId: string) => {
       name: product.name,
       description: product.description,
       category: product.category,
-      price: product.price,
+      price: product.hide_prices ? null : product.price, // Hide price if hide_prices is true
       unit: product.unit,
       isActive: product.is_active,
       isGlobal: product.is_global,
+      hidePrices: product.hide_prices,
       imageUrl: product.image_url,
       beanOrigin: product.bean_origin,
       roastLevel: product.roast_level,
@@ -827,4 +845,57 @@ export const getArchivedOrdersCount = async () => {
   
   if (error) throw error
   return count || 0
+}
+
+// Assign customer codes to existing users who don't have them
+export const assignCustomerCodesToUsers = async () => {
+  try {
+    // Get users without customer codes
+    const { data: usersWithoutCodes, error: fetchError } = await supabaseAdmin
+      .from('users')
+      .select('id, email')
+      .is('customer_code', null)
+    
+    if (fetchError) throw fetchError
+    
+    if (!usersWithoutCodes || usersWithoutCodes.length === 0) {
+      console.log('No users found without customer codes')
+      return
+    }
+
+    console.log(`Found ${usersWithoutCodes.length} users without customer codes`)
+
+    // Assign customer codes to each user
+    for (const user of usersWithoutCodes) {
+      // Get the next customer code from the sequence
+      const { data: seqData, error: seqError } = await supabaseAdmin
+        .rpc('nextval', { seq_name: 'customer_code_seq' })
+      
+      if (seqError) {
+        console.error(`Error getting customer code for user ${user.id}:`, seqError)
+        continue
+      }
+
+      // Update the user with the customer code
+      const { error: updateError } = await supabaseAdmin
+        .from('users')
+        .update({ 
+          customer_code: seqData,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', user.id)
+      
+      if (updateError) {
+        console.error(`Error updating user ${user.id} with customer code:`, updateError)
+      } else {
+        console.log(`Assigned customer code ${seqData} to user ${user.email}`)
+      }
+    }
+
+    console.log('Finished assigning customer codes')
+    return usersWithoutCodes.length
+  } catch (error) {
+    console.error('Error in assignCustomerCodesToUsers:', error)
+    throw error
+  }
 }

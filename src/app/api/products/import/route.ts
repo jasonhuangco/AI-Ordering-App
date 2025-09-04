@@ -3,6 +3,9 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '../../../../lib/auth'
 import { createProduct } from '../../../../lib/supabase-admin'
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic'
+
 interface ProductImportRow {
   name: string
   description: string

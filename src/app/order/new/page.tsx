@@ -1,18 +1,20 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { canUserSeePrices, formatPriceForUser, UserRole } from '../../../lib/priceVisibility'
 
 interface Product {
   id: string
   name: string
   description: string
   category: string
-  price: number
+  price: number | null
   unit: string
   isActive?: boolean
+  hidePrices?: boolean
 }
 
 interface CartItem {
@@ -39,7 +41,7 @@ export default function NewOrderPage() {
   }, [status, session, router])
 
   useEffect(() => {
-    if (session?.user?.role === 'CUSTOMER') {
+    if (session?.user?.role !== 'ADMIN') {
       fetchProducts()
       fetchFavorites()
       // Load cart from localStorage
@@ -116,6 +118,13 @@ export default function NewOrderPage() {
     return Number.isFinite(total) ? total : 0
   }
 
+  const canShowCartTotal = () => {
+    // If any item in cart has hidden prices for this user role, don't show total
+    return !cart.some(item => 
+      !canUserSeePrices(session?.user?.role as UserRole, item.product)
+    )
+  }
+
   const toggleFavorite = async (productId: string) => {
     const isFavorited = favorites.includes(productId)
     
@@ -127,6 +136,10 @@ export default function NewOrderPage() {
         })
         if (response.ok) {
           setFavorites(prev => prev.filter(id => id !== productId))
+        } else {
+          const errorData = await response.json()
+          console.error('Failed to remove favorite:', errorData)
+          alert(`Failed to remove from favorites: ${errorData.error || 'Unknown error'}`)
         }
       } else {
         // Add to favorites
@@ -137,10 +150,22 @@ export default function NewOrderPage() {
         })
         if (response.ok) {
           setFavorites(prev => [...prev, productId])
+        } else {
+          const errorData = await response.json()
+          console.error('Failed to add favorite:', errorData)
+          
+          // Handle specific error cases
+          if (response.status === 409) {
+            // Product already in favorites - update the UI to reflect this
+            setFavorites(prev => [...prev, productId])
+          } else {
+            alert(`Failed to add to favorites: ${errorData.error || 'Unknown error'}`)
+          }
         }
       }
     } catch (error) {
       console.error('Failed to toggle favorite:', error)
+      alert('Network error while updating favorites. Please try again.')
     }
   }
 
@@ -168,7 +193,7 @@ export default function NewOrderPage() {
     </div>
   }
 
-  if (!session?.user || session.user.role !== 'CUSTOMER') {
+  if (!session?.user || session.user.role === 'ADMIN') {
     return null
   }
 
@@ -187,7 +212,9 @@ export default function NewOrderPage() {
             {cart.length > 0 && (
               <div className="text-coffee-light flex items-center space-x-2">
                 <span>Cart ({cart.length})</span>
-                <span>${getCartTotal().toFixed(2)}</span>
+                {canShowCartTotal() && (
+                  <span>${getCartTotal().toFixed(2)}</span>
+                )}
               </div>
             )}
           </div>
@@ -276,12 +303,20 @@ export default function NewOrderPage() {
                   
                   <div className="flex justify-between items-center mb-4">
                     <div>
-                      <span className="text-2xl font-bold text-coffee-brown">
-                        ${(product.price || 0).toFixed(2)}
-                      </span>
-                      <span className="text-sm text-coffee-dark opacity-70 ml-1">
-                        {product.unit}
-                      </span>
+                      {canUserSeePrices(session?.user?.role as UserRole, product) ? (
+                        <>
+                          <span className="text-2xl font-bold text-coffee-brown">
+                            ${(product.price || 0).toFixed(2)}
+                          </span>
+                          <span className="text-sm text-coffee-dark opacity-70 ml-1">
+                            {product.unit}
+                          </span>
+                        </>
+                      ) : (
+                        <span className="text-lg font-medium text-coffee-dark">
+                          Unit: {product.unit}
+                        </span>
+                      )}
                     </div>
                   </div>
 
@@ -310,7 +345,11 @@ export default function NewOrderPage() {
                         </button>
                       </div>
                       <span className="text-sm font-medium text-coffee-brown">
-                        ${((product.price || 0) * cartQuantity).toFixed(2)}
+                        {canUserSeePrices(session?.user?.role as UserRole, product) ? (
+                          `$${((product.price || 0) * cartQuantity).toFixed(2)}`
+                        ) : (
+                          `${cartQuantity} ${product.unit}${cartQuantity !== 1 ? 's' : ''}`
+                        )}
                       </span>
                     </div>
                   )}
@@ -337,9 +376,11 @@ export default function NewOrderPage() {
             <div className="text-sm mb-2">
               {cart.length} item{cart.length !== 1 ? 's' : ''} in cart
             </div>
-            <div className="text-lg font-bold mb-3">
-              ${getCartTotal().toFixed(2)}
-            </div>
+            {canShowCartTotal() && (
+              <div className="text-lg font-bold mb-3">
+                ${getCartTotal().toFixed(2)}
+              </div>
+            )}
             <button
               onClick={goToReview}
               disabled={cart.length === 0}

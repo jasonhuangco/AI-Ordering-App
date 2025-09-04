@@ -4,17 +4,19 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { canUserSeePrices, formatPriceForUser, UserRole } from '../../lib/priceVisibility'
 
 interface Favorite {
   id: string
   createdAt: string
-  product: {
+  products: {
     id: string
     name: string
     description: string
     category: string
-    price: number
+    price: number | null
     unit: string
+    hidePrices?: boolean
   }
 }
 
@@ -24,8 +26,9 @@ interface CartItem {
     name: string
     description: string
     category: string
-    price: number
+    price: number | null
     unit: string
+    hidePrices?: boolean
   }
   quantity: number
 }
@@ -46,7 +49,7 @@ export default function FavoritesPage() {
   }, [status, session, router])
 
   useEffect(() => {
-    if (session?.user?.role === 'CUSTOMER') {
+    if (session?.user?.role !== 'ADMIN') {
       fetchFavorites()
       // Load cart from localStorage
       const savedCart = localStorage.getItem('orderCart')
@@ -77,7 +80,7 @@ export default function FavoritesPage() {
       })
       if (response.ok) {
         setFavorites(prevFavorites => 
-          prevFavorites.filter(fav => fav.product.id !== productId)
+          prevFavorites.filter(fav => fav.products.id !== productId)
         )
       }
     } catch (error) {
@@ -85,7 +88,7 @@ export default function FavoritesPage() {
     }
   }
 
-  const addToCart = (product: Favorite['product'], quantity = 1) => {
+  const addToCart = (product: Favorite['products'], quantity = 1) => {
     setCart(prevCart => {
       const existingItem = prevCart.find(item => item.product.id === product.id)
       let newCart
@@ -125,6 +128,13 @@ export default function FavoritesPage() {
     return Number.isFinite(total) ? total : 0
   }
 
+  const canShowCartTotal = () => {
+    // If any item in cart has hidden prices for this user role, don't show total
+    return !cart.some(item => 
+      !canUserSeePrices(session?.user?.role as UserRole, item.product)
+    )
+  }
+
   const goToReview = () => {
     if (cart.length === 0) return
     // Cart is already saved to localStorage, just navigate
@@ -140,9 +150,9 @@ export default function FavoritesPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           items: favorites.map(fav => ({
-            productId: fav.product.id,
+            productId: fav.products.id,
             quantity: 1,
-            price: fav.product.price
+            price: fav.products.price
           }))
         })
       })
@@ -165,7 +175,7 @@ export default function FavoritesPage() {
     </div>
   }
 
-  if (!session?.user || session.user.role !== 'CUSTOMER') {
+  if (!session?.user || session.user.role === 'ADMIN') {
     return null
   }
 
@@ -185,7 +195,9 @@ export default function FavoritesPage() {
               {cart.length > 0 && (
                 <div className="text-coffee-light flex items-center space-x-4">
                   <span>Cart ({cart.length})</span>
-                  <span>${getCartTotal().toFixed(2)}</span>
+                  {canShowCartTotal() && (
+                    <span>${getCartTotal().toFixed(2)}</span>
+                  )}
                   <button
                     onClick={goToReview}
                     className="bg-white text-coffee-brown px-4 py-2 rounded hover:bg-coffee-light"
@@ -232,20 +244,20 @@ export default function FavoritesPage() {
 
             <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {favorites.map(favorite => {
-                const cartItem = cart.find(item => item.product.id === favorite.product.id)
+                const cartItem = cart.find(item => item.product.id === favorite.products.id)
                 const cartQuantity = cartItem ? cartItem.quantity : 0
 
                 return (
                   <div key={favorite.id} className="bg-white rounded-lg shadow-lg overflow-hidden">
                     <div className="p-6">
                       <div className="flex justify-between items-start mb-4">
-                        <h3 className="text-lg font-semibold text-coffee-dark">{favorite.product.name}</h3>
+                        <h3 className="text-lg font-semibold text-coffee-dark">{favorite.products.name}</h3>
                         <div className="flex items-center space-x-2">
                           <span className="bg-coffee-light text-coffee-dark text-xs px-2 py-1 rounded">
-                            {favorite.product.category?.replace('_', ' ') || 'Other'}
+                            {favorite.products.category?.replace('_', ' ') || 'Other'}
                           </span>
                           <button
-                            onClick={() => removeFavorite(favorite.product.id)}
+                            onClick={() => removeFavorite(favorite.products.id)}
                             className="text-xl hover:scale-110 transition-transform"
                             title="Remove from favorites"
                           >
@@ -254,12 +266,18 @@ export default function FavoritesPage() {
                         </div>
                       </div>
                       
-                      <p className="text-gray-600 text-sm mb-4">{favorite.product.description}</p>
+                      <p className="text-gray-600 text-sm mb-4">{favorite.products.description}</p>
                       
                       <div className="flex justify-between items-center mb-4">
-                        <span className="text-lg font-bold text-coffee-brown">
-                          ${(favorite.product.price || 0).toFixed(2)} {favorite.product.unit}
-                        </span>
+                        {canUserSeePrices(session?.user?.role as UserRole, favorite.products) ? (
+                          <span className="text-lg font-bold text-coffee-brown">
+                            ${(favorite.products.price || 0).toFixed(2)} {favorite.products.unit}
+                          </span>
+                        ) : (
+                          <span className="text-lg font-medium text-coffee-dark">
+                            Unit: {favorite.products.unit}
+                          </span>
+                        )}
                         <div className="text-xs text-gray-500">
                           Added {new Date(favorite.createdAt).toLocaleDateString()}
                         </div>
@@ -269,7 +287,7 @@ export default function FavoritesPage() {
                       <div className="flex items-center justify-between">
                         {cartQuantity === 0 ? (
                           <button
-                            onClick={() => addToCart(favorite.product)}
+                            onClick={() => addToCart(favorite.products)}
                             className="flex-1 bg-coffee-brown text-white py-2 px-4 rounded-lg hover:bg-coffee-dark transition-colors"
                           >
                             Add to Cart
@@ -278,21 +296,25 @@ export default function FavoritesPage() {
                           <div className="flex items-center justify-between w-full">
                             <div className="flex items-center space-x-3">
                               <button
-                                onClick={() => updateQuantity(favorite.product.id, cartQuantity - 1)}
+                                onClick={() => updateQuantity(favorite.products.id, cartQuantity - 1)}
                                 className="w-8 h-8 rounded-full bg-coffee-light hover:bg-coffee-brown hover:text-white flex items-center justify-center transition-colors"
                               >
                                 -
                               </button>
                               <span className="font-medium min-w-[2rem] text-center">{cartQuantity}</span>
                               <button
-                                onClick={() => updateQuantity(favorite.product.id, cartQuantity + 1)}
+                                onClick={() => updateQuantity(favorite.products.id, cartQuantity + 1)}
                                 className="w-8 h-8 rounded-full bg-coffee-light hover:bg-coffee-brown hover:text-white flex items-center justify-center transition-colors"
                               >
                                 +
                               </button>
                             </div>
                             <span className="text-sm font-medium text-coffee-brown">
-                              ${((favorite.product.price || 0) * cartQuantity).toFixed(2)}
+                              {canUserSeePrices(session?.user?.role as UserRole, favorite.products) ? (
+                                `$${((favorite.products.price || 0) * cartQuantity).toFixed(2)}`
+                              ) : (
+                                `${cartQuantity} ${favorite.products.unit}${cartQuantity !== 1 ? 's' : ''}`
+                              )}
                             </span>
                           </div>
                         )}

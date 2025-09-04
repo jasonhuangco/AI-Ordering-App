@@ -4,6 +4,9 @@ import { authOptions } from '../../../../lib/auth'
 import { getAllOrders, createOrder, getUserById, getAllProducts } from '../../../../lib/supabase-admin'
 import { generateOrderNumber } from '../../../../lib/orderUtils'
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)

@@ -23,8 +23,20 @@ export const authOptions: NextAuthOptions = {
             return null
           }
 
-          // Note: For now, we'll skip password validation since users are created through Supabase Auth
-          // In a full migration, you'd need to handle password validation differently
+          // Validate password
+          if (!user.password_hash || user.password_hash === '') {
+            // User hasn't set up a password yet
+            console.log('User has no password set:', credentials.email)
+            return null
+          }
+
+          const bcryptjs = require('bcryptjs')
+          const isValidPassword = await bcryptjs.compare(credentials.password, user.password_hash)
+          
+          if (!isValidPassword) {
+            console.log('Invalid password for user:', credentials.email)
+            return null
+          }
           
           return {
             id: user.id,

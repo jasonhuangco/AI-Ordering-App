@@ -16,6 +16,7 @@ interface Customer {
   notes: string | null
   isActive: boolean
   createdAt: string
+  customerCode: number | null
 }
 
 export default function CustomerDetailPage() {
@@ -25,6 +26,10 @@ export default function CustomerDetailPage() {
   const customerId = params.id as string
   const [customer, setCustomer] = useState<Customer | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [passwordResetResult, setPasswordResetResult] = useState<{
+    temporaryPassword?: string
+    customerEmail?: string
+  } | null>(null)
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -103,6 +108,35 @@ export default function CustomerDetailPage() {
     } catch (error) {
       console.error('Failed to delete customer:', error)
       alert('Failed to delete customer')
+    }
+  }
+
+  const handlePasswordReset = async () => {
+    if (!customer) return
+
+    if (!confirm(`Generate a new temporary password for ${customer.email}?`)) {
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/admin/customers/${customerId}/reset-password`, {
+        method: 'POST'
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        setPasswordResetResult({
+          temporaryPassword: data.temporaryPassword,
+          customerEmail: data.customerEmail
+        })
+        alert(`Password reset successful! Temporary password: ${data.temporaryPassword}\n\nPlease share this with the customer securely.`)
+      } else {
+        throw new Error(data.error || 'Failed to reset password')
+      }
+    } catch (error) {
+      console.error('Failed to reset password:', error)
+      alert('Failed to reset password')
     }
   }
 
@@ -201,7 +235,7 @@ export default function CustomerDetailPage() {
               <div className="space-y-2">
                 <div>
                   <span className="font-medium text-gray-700">Customer ID:</span>
-                  <span className="ml-2 text-gray-600 font-mono text-sm">{customer.id}</span>
+                  <span className="ml-2 text-gray-600 font-mono text-sm">{customer.customerCode || 'Not assigned'}</span>
                 </div>
                 <div>
                   <span className="font-medium text-gray-700">Created:</span>
@@ -258,6 +292,13 @@ export default function CustomerDetailPage() {
                 }`}
               >
                 {customer.isActive ? 'Deactivate' : 'Activate'}
+              </button>
+              <button
+                onClick={handlePasswordReset}
+                className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 transition-colors"
+                title="Generate a new temporary password for this customer"
+              >
+                🔓 Reset Password
               </button>
               <button
                 onClick={deleteCustomer}

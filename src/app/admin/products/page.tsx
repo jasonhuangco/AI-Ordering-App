@@ -15,6 +15,7 @@ interface Product {
   unit: string
   isActive: boolean
   isGlobal: boolean
+  hidePrices?: boolean
   createdAt?: string
   updatedAt?: string
   assignedCustomers?: Array<{
@@ -289,6 +290,24 @@ export default function AdminProductsPage() {
       }
     } catch (error) {
       console.error('Failed to update product global status:', error)
+    }
+  }
+
+  const toggleHidePrices = async (productId: string, hidePrices: boolean) => {
+    try {
+      const response = await fetch(`/api/products/${productId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ hidePrices: !hidePrices }),
+      })
+
+      if (response.ok) {
+        fetchProducts() // Refresh the list
+      }
+    } catch (error) {
+      console.error('Failed to update product price visibility:', error)
     }
   }
 
@@ -930,6 +949,30 @@ export default function AdminProductsPage() {
                             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                               <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zM11 19.93c-3.94-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
                             </svg>
+                          </button>
+                          
+                          {/* Toggle Hide Prices */}
+                          <button
+                            onClick={() => toggleHidePrices(product.id, product.hidePrices || false)}
+                            className={`p-2 rounded-full hover:scale-110 transition-all duration-200 ${
+                              product.hidePrices
+                                ? 'bg-orange-100 text-orange-700 hover:bg-orange-200'
+                                : 'bg-green-100 text-green-700 hover:bg-green-200'
+                            }`}
+                            title={product.hidePrices ? 'Show Prices to Customers' : 'Hide Prices from Customers'}
+                          >
+                            {product.hidePrices ? (
+                              // Dollar sign with slash (prices hidden)
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3l18 18" />
+                              </svg>
+                            ) : (
+                              // Dollar sign (prices visible)
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                              </svg>
+                            )}
                           </button>
                           
                           {/* Edit Product */}

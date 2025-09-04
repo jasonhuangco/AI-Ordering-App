@@ -36,6 +36,7 @@ export default function ProfilePage() {
   
   // Password change states
   const [showPasswordChange, setShowPasswordChange] = useState(false)
+  const [showPasswordSuccess, setShowPasswordSuccess] = useState(false)
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
     newPassword: '',
@@ -141,14 +142,20 @@ export default function ProfilePage() {
       })
 
       if (response.ok) {
-        setMessage('Password updated successfully!')
+        setMessage('✅ Password updated successfully! Your password has been changed and is now active.')
         setMessageType('success')
+        setShowPasswordSuccess(true)
         setPasswordData({
           currentPassword: '',
           newPassword: '',
           confirmPassword: ''
         })
-        setShowPasswordChange(false)
+        // Auto-hide the message and form after 5 seconds
+        setTimeout(() => {
+          setMessage('')
+          setShowPasswordChange(false)
+          setShowPasswordSuccess(false)
+        }, 5000)
       } else {
         const errorData = await response.json()
         setMessage(errorData.error || 'Failed to update password')
@@ -193,12 +200,23 @@ export default function ProfilePage() {
           </div>
 
           {message && (
-            <div className={`mb-6 p-4 rounded-lg ${
+            <div className={`mb-6 p-4 rounded-lg border-l-4 ${
               messageType === 'success' 
-                ? 'bg-green-50 border border-green-200 text-green-800' 
-                : 'bg-red-50 border border-red-200 text-red-800'
-            }`}>
-              {message}
+                ? message.includes('Password updated') 
+                  ? 'bg-green-50 border-l-green-500 border border-green-200 text-green-800 shadow-lg' 
+                  : 'bg-green-50 border-l-green-500 border border-green-200 text-green-800'
+                : 'bg-red-50 border-l-red-500 border border-red-200 text-red-800'
+            } flex items-center gap-3`}>
+              {messageType === 'success' && message.includes('Password updated') && (
+                <div className="flex-shrink-0">
+                  <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  </svg>
+                </div>
+              )}
+              <div className="flex-grow">
+                {message}
+              </div>
             </div>
           )}
 
@@ -312,7 +330,12 @@ export default function ProfilePage() {
             {/* Password Change */}
             <div className="border-t border-coffee-light/30 pt-8">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold text-coffee-dark">Security</h2>
+                <div>
+                  <h2 className="text-xl font-semibold text-coffee-dark">Security</h2>
+                  <p className="text-sm text-coffee-dark/60 mt-1">
+                    Keep your account secure by using a strong, unique password
+                  </p>
+                </div>
                 <button
                   onClick={() => setShowPasswordChange(!showPasswordChange)}
                   className="text-coffee-brown hover:text-coffee-dark transition-colors flex items-center gap-2"
@@ -323,6 +346,21 @@ export default function ProfilePage() {
 
               {showPasswordChange && (
                 <form onSubmit={handlePasswordChange} className="space-y-6">
+                  {showPasswordSuccess && (
+                    <div className="bg-green-50 border-l-4 border-l-green-500 border border-green-200 p-4 rounded-lg mb-6">
+                      <div className="flex items-center gap-3">
+                        <div className="flex-shrink-0">
+                          <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                          </svg>
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-semibold text-green-800">Password Updated Successfully!</h3>
+                          <p className="text-green-700 mt-1">Your password has been changed and is now active. This form will close automatically in a few seconds.</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                   <div>
                     <label className="block text-sm font-medium text-coffee-dark mb-2">
                       Current Password
@@ -369,13 +407,17 @@ export default function ProfilePage() {
                   <div className="flex gap-4">
                     <button
                       type="submit"
-                      disabled={isSaving}
+                      disabled={isSaving || showPasswordSuccess}
                       className="bg-coffee-brown hover:bg-coffee-dark text-white font-medium py-3 px-6 rounded-lg transition-all duration-200 disabled:opacity-50 flex items-center gap-2"
                     >
                       {isSaving ? (
                         <>
                           <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                           Updating...
+                        </>
+                      ) : showPasswordSuccess ? (
+                        <>
+                          ✅ Password Updated
                         </>
                       ) : (
                         <>
@@ -387,6 +429,8 @@ export default function ProfilePage() {
                       type="button"
                       onClick={() => {
                         setShowPasswordChange(false)
+                        setShowPasswordSuccess(false)
+                        setMessage('')
                         setPasswordData({
                           currentPassword: '',
                           newPassword: '',

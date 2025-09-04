@@ -13,6 +13,7 @@ interface Product {
   price: number
   unit: string
   isActive: boolean
+  hidePrices?: boolean
   beanOrigin?: string
   roastLevel?: string
   productionWeightPerUnit?: number
@@ -393,6 +394,20 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
                 />
                 <label htmlFor="isActive" className="ml-2 block text-sm text-gray-900">
                   Active (available for ordering)
+                </label>
+              </div>
+
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="hidePrices"
+                  name="hidePrices"
+                  checked={product.hidePrices || false}
+                  onChange={handleCheckboxChange}
+                  className="h-4 w-4 text-coffee-brown focus:ring-coffee-brown border-gray-300 rounded"
+                />
+                <label htmlFor="hidePrices" className="ml-2 block text-sm text-gray-900">
+                  Hide prices from customers (for sensitive pricing)
                 </label>
               </div>
 

@@ -4,6 +4,9 @@ import { authOptions } from '../../../../lib/auth'
 import { supabaseAdmin } from '../../../../lib/supabase-admin'
 import bcrypt from 'bcryptjs'
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic'
+
 export async function GET() {
   try {
     console.log('👥 Admin users GET request received')

@@ -29,7 +29,6 @@ export default function CustomerNav({ currentPage }: CustomerNavProps) {
     { href: '/dashboard', label: 'Dashboard', icon: '🏠' },
     { href: '/order/new', label: 'New Order', icon: '🛒' },
     { href: '/favorites', label: 'Favorites', icon: '❤️' },
-    { href: '/order/repeat', label: 'Repeat Order', icon: '🔄' },
     { href: '/profile', label: 'Profile', icon: '👤' },
   ]
 

@@ -1,18 +1,20 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { canUserSeePrices, hasHiddenPricesForUser, formatTotalForUser, UserRole } from '../../../lib/priceVisibility'
 
 interface Product {
   id: string
   name: string
   description: string
   category: string
-  price: number
+  price: number | null
   unit: string
   isActive?: boolean
+  hidePrices?: boolean
 }
 
 interface CartItem {
@@ -115,8 +117,16 @@ export default function OrderReviewPage() {
   }
 
   const getCartTotal = () => {
-    const total = cart.reduce((total, item) => total + ((item.product.price || 0) * item.quantity), 0)
+    const total = cart.reduce((total, item) => {
+      if (!canUserSeePrices(session?.user?.role as UserRole, item.product)) return total
+      return total + ((item.product.price || 0) * item.quantity)
+    }, 0)
     return Number.isFinite(total) ? total : 0
+  }
+
+  const hasHiddenPriceItems = () => {
+    if (!session?.user?.role) return false
+    return hasHiddenPricesForUser(session.user.role as UserRole, cart)
   }
 
   const getTotalItems = () => {
@@ -167,7 +177,7 @@ export default function OrderReviewPage() {
     </div>
   }
 
-  if (!session?.user || session.user.role !== 'CUSTOMER') {
+  if (!session?.user || session.user.role === 'ADMIN') {
     return null
   }
 
@@ -218,7 +228,7 @@ export default function OrderReviewPage() {
               <h1 className="text-xl font-serif font-bold text-white">Review Your Order</h1>
             </div>
             <div className="text-coffee-light text-sm">
-              {getTotalItems()} item{getTotalItems() !== 1 ? 's' : ''} • ${getCartTotal().toFixed(2)}
+              {getTotalItems()} item{getTotalItems() !== 1 ? 's' : ''} • {formatTotalForUser(session?.user?.role as UserRole, getCartTotal(), hasHiddenPriceItems())}
             </div>
           </div>
         </div>
@@ -246,7 +256,11 @@ export default function OrderReviewPage() {
                             {item.product.category?.replace('_', ' ') || 'Other'}
                           </span>
                           <span className="text-sm text-gray-600 ml-2">
-                            ${(item.product.price || 0).toFixed(2)} {item.product.unit}
+                            {canUserSeePrices(session?.user?.role as UserRole, item.product) ? (
+                              `$${(item.product.price || 0).toFixed(2)} ${item.product.unit}`
+                            ) : (
+                              `Unit: ${item.product.unit}`
+                            )}
                           </span>
                         </div>
                       </div>
@@ -274,7 +288,11 @@ export default function OrderReviewPage() {
                     {/* Subtotal */}
                     <div className="text-right w-20">
                       <div className="font-semibold text-coffee-brown">
-                        ${((item.product.price || 0) * item.quantity).toFixed(2)}
+                        {canUserSeePrices(session?.user?.role as UserRole, item.product) ? (
+                          `$${((item.product.price || 0) * item.quantity).toFixed(2)}`
+                        ) : (
+                          `${item.quantity} ${item.product.unit}${item.quantity !== 1 ? 's' : ''}`
+                        )}
                       </div>
                     </div>
                     
@@ -318,7 +336,9 @@ export default function OrderReviewPage() {
             <div className="mt-6 pt-6 border-t">
               <div className="flex justify-between items-center text-xl font-bold">
                 <span>Total ({getTotalItems()} item{getTotalItems() !== 1 ? 's' : ''})</span>
-                <span className="text-coffee-brown">${getCartTotal().toFixed(2)}</span>
+                <span className="text-coffee-brown">
+                  {formatTotalForUser(session?.user?.role as UserRole, getCartTotal(), hasHiddenPriceItems())}
+                </span>
               </div>
             </div>
           </div>

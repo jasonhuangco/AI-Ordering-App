@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { generateOrderNumberWithSequence } from '../../../lib/orderUtils'
+import { canUserSeePrices, hasHiddenPricesForUser, formatTotalForUser, UserRole } from '../../../lib/priceVisibility'
 
 interface Order {
   id: string
@@ -25,6 +26,7 @@ interface Order {
       name: string
       category: string
       unit: string
+      hidePrices?: boolean
     }
   }[]
 }
@@ -44,7 +46,7 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
   }, [status, session, router])
 
   useEffect(() => {
-    if (session?.user?.role === 'CUSTOMER' && params.id) {
+    if (session?.user?.role !== 'ADMIN' && params.id) {
       fetchOrder()
     }
   }, [session, params.id])
@@ -74,6 +76,11 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
       case 'CANCELLED': return 'bg-red-100 text-red-800'
       default: return 'bg-gray-100 text-gray-800'
     }
+  }
+
+  const hasHiddenPriceItems = () => {
+    if (!order || !session?.user?.role) return false
+    return hasHiddenPricesForUser(session.user.role as UserRole, order.items)
   }
 
   const repeatOrder = async () => {
@@ -110,7 +117,7 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
     </div>
   }
 
-  if (!session?.user || session.user.role !== 'CUSTOMER' || !order) {
+  if (!session?.user || session.user.role === 'ADMIN' || !order) {
     return null
   }
 
@@ -162,7 +169,7 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
               <div>
                 <h3 className="font-semibold text-coffee-dark mb-2">Total</h3>
                 <p className="text-xl font-bold text-coffee-brown">
-                  ${(order.total || 0).toFixed(2)}
+                  {formatTotalForUser(session?.user?.role as UserRole, order.total || 0, hasHiddenPriceItems())}
                 </p>
               </div>
             </div>
@@ -183,13 +190,17 @@ export default function OrderDetailPage({ params }: { params: { id: string } }) 
                   <div className="flex-1">
                     <h4 className="font-medium text-coffee-dark">{item.product.name}</h4>
                     <p className="text-sm text-gray-600">
-                      {item.product.category?.replace('_', ' ') || 'Other'} • ${(item.unitPrice || 0).toFixed(2)} {item.product.unit}
+                      {item.product.category?.replace('_', ' ') || 'Other'} • {canUserSeePrices(session?.user?.role as UserRole, item.product) ? `$${(item.unitPrice || 0).toFixed(2)} ${item.product.unit}` : `${item.product.unit}`}
                     </p>
                   </div>
                   <div className="text-right">
                     <p className="font-medium">Qty: {item.quantity}</p>
                     <p className="text-coffee-brown font-semibold">
-                      ${((item.unitPrice || 0) * item.quantity).toFixed(2)}
+                      {canUserSeePrices(session?.user?.role as UserRole, item.product) ? (
+                        `$${((item.unitPrice || 0) * item.quantity).toFixed(2)}`
+                      ) : (
+                        `${item.quantity} ${item.product.unit}${item.quantity !== 1 ? 's' : ''}`
+                      )}
                     </p>
                   </div>
                 </div>

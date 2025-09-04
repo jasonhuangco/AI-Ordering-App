@@ -11,6 +11,7 @@
     "postbuild": "echo 'Build completed successfully! Ready for production.'"
   },
   "dependencies": {
+    "@emailjs/browser": "^4.4.1",
     "@hookform/resolvers": "^3.3.2",
     "@supabase/supabase-js": "^2.55.0",
     "@types/bcryptjs": "^2.4.6",
@@ -19,6 +20,7 @@
     "@types/react-dom": "18.2.18",
     "autoprefixer": "10.4.16",
     "bcryptjs": "^2.4.3",
+    "dotenv": "^17.2.2",
     "eslint": "8.56.0",
     "eslint-config-next": "14.0.4",
     "next": "14.0.4",

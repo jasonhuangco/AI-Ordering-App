@@ -14,6 +14,7 @@ interface Customer {
   phone: string | null
   address: string | null
   notes: string | null
+  role: string
   isActive: boolean
   createdAt: string
 }
@@ -98,6 +99,41 @@ export default function AdminCustomersPage() {
     }
   }
 
+  const updateCustomerRole = async (customerId: string, newRole: string) => {
+    try {
+      const response = await fetch(`/api/admin/customers/${customerId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ role: newRole }),
+      })
+
+      if (response.ok) {
+        fetchCustomers() // Refresh the list
+      } else {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to update role')
+      }
+    } catch (error) {
+      console.error('Failed to update customer role:', error)
+      alert('Failed to update customer role')
+    }
+  }
+
+  const getRoleDisplayInfo = (role: string) => {
+    switch (role) {
+      case 'ADMIN':
+        return { label: 'Admin', color: 'bg-purple-100 text-purple-800', description: 'Full access to all features' }
+      case 'MANAGER':
+        return { label: 'Manager', color: 'bg-blue-100 text-blue-800', description: 'Can see all pricing information' }
+      case 'EMPLOYEE':
+        return { label: 'Employee', color: 'bg-orange-100 text-orange-800', description: 'Limited pricing access based on product settings' }
+      default:
+        return { label: role, color: 'bg-gray-100 text-gray-800', description: 'Unknown role' }
+    }
+  }
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -165,13 +201,26 @@ export default function AdminCustomersPage() {
                         <h3 className="text-lg font-medium text-coffee-dark mb-2 sm:mb-0">
                           {customer.companyName || customer.contactName || 'Unknown'}
                         </h3>
-                        <span className={`text-xs px-2 py-1 rounded whitespace-nowrap inline-block ${
-                          customer.isActive 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-red-100 text-red-800'
-                        }`}>
-                          {customer.isActive ? 'Active' : 'Inactive'}
-                        </span>
+                        <div className="flex flex-wrap gap-2">
+                          <span className={`text-xs px-2 py-1 rounded whitespace-nowrap inline-block ${
+                            customer.isActive 
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-red-100 text-red-800'
+                          }`}>
+                            {customer.isActive ? 'Active' : 'Inactive'}
+                          </span>
+                          {/* Role Selector */}
+                          <select
+                            value={customer.role}
+                            onChange={(e) => updateCustomerRole(customer.id, e.target.value)}
+                            className={`text-xs px-2 py-1 rounded border-none cursor-pointer ${getRoleDisplayInfo(customer.role).color}`}
+                            title={getRoleDisplayInfo(customer.role).description}
+                          >
+                            <option value="EMPLOYEE">Employee</option>
+                            <option value="MANAGER">Manager</option>
+                            <option value="ADMIN">Admin</option>
+                          </select>
+                        </div>
                       </div>
                       
                       {/* Customer Details */}

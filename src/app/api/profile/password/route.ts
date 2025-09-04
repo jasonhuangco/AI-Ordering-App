@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
-import { PrismaClient } from '@prisma/client'
+import { authOptions } from '../../../../lib/auth'
+import { getUserById, supabaseAdmin } from '../../../../lib/supabase-admin'
 import bcryptjs from 'bcryptjs'
 
-const prisma = new PrismaClient()
+// Force dynamic rendering
+export const dynamic = 'force-dynamic'
 
 export async function PUT(request: NextRequest) {
   try {
@@ -13,6 +14,8 @@ export async function PUT(request: NextRequest) {
     if (!session || !session.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    console.log('Password change request for user:', session.user.id)
 
     const data = await request.json()
     const { currentPassword, newPassword } = data
@@ -32,17 +35,22 @@ export async function PUT(request: NextRequest) {
     }
 
     // Get the user's current password hash
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { password: true }
-    })
+    const user = await getUserById(session.user.id)
 
     if (!user) {
+      console.error('User not found with ID:', session.user.id)
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
     // Verify current password
-    const isCurrentPasswordValid = await bcryptjs.compare(currentPassword, user.password)
+    if (!user.password_hash || user.password_hash === '') {
+      return NextResponse.json(
+        { error: 'No password is set for your account. Please contact administrator.' },
+        { status: 400 }
+      )
+    }
+
+    const isCurrentPasswordValid = await bcryptjs.compare(currentPassword, user.password_hash)
     
     if (!isCurrentPasswordValid) {
       return NextResponse.json(
@@ -55,10 +63,18 @@ export async function PUT(request: NextRequest) {
     const hashedNewPassword = await bcryptjs.hash(newPassword, 12)
 
     // Update the password in the database
-    await prisma.user.update({
-      where: { id: session.user.id },
-      data: { password: hashedNewPassword }
-    })
+    const { error: updateError } = await supabaseAdmin
+      .from('users')
+      .update({ password_hash: hashedNewPassword })
+      .eq('id', session.user.id)
+
+    if (updateError) {
+      console.error('Error updating password:', updateError)
+      return NextResponse.json(
+        { error: 'Failed to update password' },
+        { status: 500 }
+      )
+    }
 
     return NextResponse.json({ message: 'Password updated successfully' })
   } catch (error) {

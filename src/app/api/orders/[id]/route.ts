@@ -3,6 +3,9 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '../../../../lib/auth'
 import { supabaseAdmin } from '../../../../lib/supabase-admin'
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic'
+
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -83,6 +86,7 @@ export async function GET(
           price: item.products.price,
           isGlobal: item.products.is_global,
           isActive: item.products.is_active,
+          hidePrices: item.products.hide_prices,
           imageUrl: item.products.image_url,
           createdAt: item.products.created_at,
           updatedAt: item.products.updated_at
@@ -178,6 +182,7 @@ export async function PATCH(
           price: item.products.price,
           isGlobal: item.products.is_global,
           isActive: item.products.is_active,
+          hidePrices: item.products.hide_prices,
           imageUrl: item.products.image_url,
           createdAt: item.products.created_at,
           updatedAt: item.products.updated_at

@@ -27,7 +27,7 @@ export interface Database {
         Row: {
           id: string
           email: string
-          role: 'ADMIN' | 'CUSTOMER'
+          role: 'ADMIN' | 'MANAGER' | 'EMPLOYEE'
           customer_code: number | null
           is_active: boolean
           created_at: string
@@ -41,7 +41,7 @@ export interface Database {
         Insert: {
           id: string
           email: string
-          role?: 'ADMIN' | 'CUSTOMER'
+          role?: 'ADMIN' | 'MANAGER' | 'EMPLOYEE'
           customer_code?: number | null
           is_active?: boolean
           company_name?: string | null
@@ -52,7 +52,7 @@ export interface Database {
         }
         Update: {
           email?: string
-          role?: 'ADMIN' | 'CUSTOMER'
+          role?: 'ADMIN' | 'MANAGER' | 'EMPLOYEE'
           customer_code?: number | null
           is_active?: boolean
           company_name?: string | null

@@ -4,6 +4,9 @@ import { authOptions } from '../../../../../lib/auth'
 import { supabaseAdmin } from '../../../../../lib/supabase-admin'
 import bcryptjs from 'bcryptjs'
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic'
+
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }

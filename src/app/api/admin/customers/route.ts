@@ -1,9 +1,12 @@
+// import { getNextCustomerCode } from '../../../../lib/customerCodeUtils' // Temporarily disabled
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '../../../../lib/auth'
 import { getAllCustomers, createUser, getUserByEmail } from '../../../../lib/supabase-admin'
 import bcrypt from 'bcryptjs'
-// import { getNextCustomerCode } from '../../../../lib/customerCodeUtils' // Temporarily disabled
+
+// Force dynamic rendering
+export const dynamic = 'force-dynamic'
 
 export async function GET() {
   try {
@@ -63,7 +66,7 @@ export async function POST(request: NextRequest) {
     const customer = await createUser({
       id: crypto.randomUUID(), // Generate UUID for new user
       email,
-      role: 'CUSTOMER',
+      role: 'EMPLOYEE',
       company_name: companyName,
       contact_name: contactName,
       phone,

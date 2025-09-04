@@ -3,6 +3,9 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '../../../../lib/auth'
 import { supabaseAdmin } from '../../../../lib/supabase-admin'
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic'
+
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -37,6 +40,7 @@ export async function GET(
       category: product.category,
       isGlobal: product.is_global,
       isActive: product.is_active,
+      hidePrices: product.hide_prices,
       imageUrl: product.image_url,
       beanOrigin: product.bean_origin,
       roastLevel: product.roast_level,
@@ -78,6 +82,7 @@ export async function PATCH(
       category, 
       isGlobal, 
       isActive, 
+      hidePrices,
       imageUrl,
       beanOrigin,
       roastLevel,
@@ -109,6 +114,7 @@ export async function PATCH(
     if (category !== undefined) updateData.category = category
     if (isGlobal !== undefined) updateData.is_global = Boolean(isGlobal)
     if (isActive !== undefined) updateData.is_active = Boolean(isActive)
+    if (hidePrices !== undefined) updateData.hide_prices = Boolean(hidePrices)
     if (imageUrl !== undefined) updateData.image_url = imageUrl?.trim() || null
     if (beanOrigin !== undefined) updateData.bean_origin = beanOrigin?.trim() || null
     if (roastLevel !== undefined) updateData.roast_level = roastLevel?.trim() || null
@@ -140,6 +146,7 @@ export async function PATCH(
       category: updatedProduct.category,
       isGlobal: updatedProduct.is_global,
       isActive: updatedProduct.is_active,
+      hidePrices: updatedProduct.hide_prices,
       imageUrl: updatedProduct.image_url,
       beanOrigin: updatedProduct.bean_origin,
       roastLevel: updatedProduct.roast_level,

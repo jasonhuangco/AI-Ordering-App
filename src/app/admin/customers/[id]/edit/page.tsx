@@ -16,6 +16,7 @@ interface Customer {
   isActive: boolean
   role: string
   createdAt: string
+  customerCode: number | null
 }
 
 export default function EditCustomerPage({ params }: { params: { id: string } }) {
@@ -24,6 +25,13 @@ export default function EditCustomerPage({ params }: { params: { id: string } })
   const [customer, setCustomer] = useState<Customer | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isResettingPassword, setIsResettingPassword] = useState(false)
+  const [passwordResetResult, setPasswordResetResult] = useState<{
+    success: boolean
+    temporaryPassword?: string
+    customerEmail?: string
+    error?: string
+  } | null>(null)
   const [formData, setFormData] = useState({
     email: '',
     companyName: '',
@@ -139,6 +147,47 @@ export default function EditCustomerPage({ params }: { params: { id: string } })
       setErrors({ submit: 'Failed to update customer' })
     } finally {
       setIsSubmitting(false)
+    }
+  }
+
+  const handlePasswordReset = async () => {
+    if (!confirm(`Are you sure you want to reset the password for ${customer?.email}? This will generate a new temporary password.`)) {
+      return
+    }
+
+    setIsResettingPassword(true)
+    setPasswordResetResult(null)
+
+    try {
+      const response = await fetch(`/api/admin/customers/${params.id}/reset-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        setPasswordResetResult({
+          success: true,
+          temporaryPassword: data.temporaryPassword,
+          customerEmail: data.customerEmail
+        })
+      } else {
+        setPasswordResetResult({
+          success: false,
+          error: data.error || 'Failed to reset password'
+        })
+      }
+    } catch (error) {
+      console.error('Failed to reset password:', error)
+      setPasswordResetResult({
+        success: false,
+        error: 'Failed to reset password'
+      })
+    } finally {
+      setIsResettingPassword(false)
     }
   }
 
@@ -343,7 +392,7 @@ export default function EditCustomerPage({ params }: { params: { id: string } })
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
               <div>
                 <span className="font-medium text-gray-700">Customer ID:</span>
-                <span className="ml-2 text-gray-600">{customer.id}</span>
+                <span className="ml-2 text-gray-600">{customer.customerCode || 'Not assigned'}</span>
               </div>
               <div>
                 <span className="font-medium text-gray-700">Account Created:</span>
@@ -365,6 +414,94 @@ export default function EditCustomerPage({ params }: { params: { id: string } })
                   {customer.isActive ? 'Active' : 'Inactive'}
                 </span>
               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Password Reset Section */}
+        <div className="mt-6 bg-white rounded-lg shadow-sm border">
+          <div className="p-6">
+            <h3 className="text-lg font-semibold text-coffee-dark mb-4">Password Management</h3>
+            
+            {passwordResetResult && (
+              <div className={`mb-4 p-4 rounded-lg border-l-4 ${
+                passwordResetResult.success 
+                  ? 'bg-green-50 border-l-green-500 border border-green-200' 
+                  : 'bg-red-50 border-l-red-500 border border-red-200'
+              }`}>
+                {passwordResetResult.success ? (
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                      </svg>
+                      <h4 className="font-semibold text-green-800">Password Reset Successful</h4>
+                    </div>
+                    <p className="text-green-700 mb-3">
+                      A new temporary password has been generated for <strong>{passwordResetResult.customerEmail}</strong>
+                    </p>
+                    <div className="bg-white rounded border p-3">
+                      <p className="text-sm text-gray-600 mb-2">Temporary Password:</p>
+                      <div className="flex items-center gap-2">
+                        <code className="bg-gray-100 px-3 py-2 rounded font-mono text-lg font-bold text-gray-800 select-all">
+                          {passwordResetResult.temporaryPassword}
+                        </code>
+                        <button
+                          onClick={() => navigator.clipboard.writeText(passwordResetResult.temporaryPassword || '')}
+                          className="px-2 py-1 text-xs bg-gray-200 hover:bg-gray-300 rounded"
+                          title="Copy to clipboard"
+                        >
+                          Copy
+                        </button>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-2">
+                        ⚠️ Please share this password securely with the customer. They should change it immediately after logging in.
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                      </svg>
+                      <h4 className="font-semibold text-red-800">Password Reset Failed</h4>
+                    </div>
+                    <p className="text-red-700 mt-1">{passwordResetResult.error}</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="flex items-start gap-4">
+              <div className="flex-1">
+                <p className="text-gray-600 mb-2">
+                  Generate a temporary password for this customer. Since the app doesn&apos;t send emails, 
+                  you&apos;ll need to share the temporary password with the customer manually.
+                </p>
+                <p className="text-sm text-gray-500">
+                  The customer will be able to log in with the temporary password and should change it immediately.
+                </p>
+              </div>
+              <button
+                onClick={handlePasswordReset}
+                disabled={isResettingPassword}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 flex items-center gap-2"
+              >
+                {isResettingPassword ? (
+                  <>
+                    <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Resetting...
+                  </>
+                ) : (
+                  <>
+                    🔓 Reset Password
+                  </>
+                )}
+              </button>
             </div>
           </div>
         </div>
