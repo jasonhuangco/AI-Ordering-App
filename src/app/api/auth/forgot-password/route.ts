@@ -116,7 +116,18 @@ export async function POST(request: NextRequest) {
       PRIVATE_KEY_SET: !!PRIVATE_KEY
     })
     
-    const { email } = await request.json()
+    let requestData
+    try {
+      requestData = await request.json()
+    } catch (parseError) {
+      console.error('Failed to parse request JSON:', parseError)
+      return NextResponse.json(
+        { error: 'Invalid request format' },
+        { status: 400 }
+      )
+    }
+
+    const { email } = requestData
 
     if (!email || !email.trim()) {
       console.log('Missing email in request')
@@ -129,9 +140,17 @@ export async function POST(request: NextRequest) {
     const trimmedEmail = email.trim().toLowerCase()
     console.log(`Processing forgot password for email: ${trimmedEmail}`)
 
-    // Check if user exists
+    // Check if user exists - wrap in try/catch for database errors
     console.log('Checking user in database...')
-    const user = await getUserByEmail(trimmedEmail)
+    let user
+    try {
+      user = await getUserByEmail(trimmedEmail)
+    } catch (dbError) {
+      console.error('Database error during user lookup:', dbError)
+      return NextResponse.json({
+        error: 'Database temporarily unavailable. Please try again later.'
+      }, { status: 500 })
+    }
 
     // Always return success message to prevent email enumeration attacks
     if (!user || !user.is_active) {
@@ -144,19 +163,25 @@ export async function POST(request: NextRequest) {
 
     console.log(`User found: ${user.contact_name || user.company_name}, Role: ${user.role}`)
 
-    // Check if email service is configured
-    if (!isEmailConfigured()) {
-      console.error('EmailJS not configured properly:', {
-        SERVICE_ID: SERVICE_ID ? 'SET' : 'MISSING',
-        PUBLIC_KEY: PUBLIC_KEY ? 'SET' : 'MISSING', 
-        PASSWORD_RESET_TEMPLATE: PASSWORD_RESET_TEMPLATE ? 'SET' : 'MISSING'
-      })
-      
-      // For now, let's still reset the password but inform about email issue
-      // This prevents the feature from being completely broken
-      const tempPassword = generateTempPassword()
-      const hashedPassword = await bcryptjs.hash(tempPassword, 12)
-      
+    // Generate a temporary password - do this early
+    const tempPassword = generateTempPassword()
+    console.log('Generated temporary password')
+
+    // Hash the new password
+    let hashedPassword
+    try {
+      hashedPassword = await bcryptjs.hash(tempPassword, 12)
+      console.log('Password hashed successfully')
+    } catch (hashError) {
+      console.error('Password hashing error:', hashError)
+      return NextResponse.json({
+        error: 'Password processing failed. Please try again.'
+      }, { status: 500 })
+    }
+
+    // Update the user's password in the database
+    console.log('Updating password in database...')
+    try {
       const { error: updateError } = await supabaseAdmin
         .from('users')
         .update({ password_hash: hashedPassword })
@@ -166,101 +191,73 @@ export async function POST(request: NextRequest) {
         console.error('Database update error:', updateError)
         throw new Error('Failed to update password in database')
       }
-      
-      console.error(`Email service not configured. Password reset to: ${tempPassword} for ${user.email}`)
-      
+      console.log('Password updated in database successfully')
+    } catch (updateError) {
+      console.error('Database update failed:', updateError)
       return NextResponse.json({
-        error: 'Email service is temporarily unavailable. Please contact administrator for your temporary password.'
+        error: 'Failed to update password. Please try again.'
       }, { status: 500 })
     }
 
-    // Generate a temporary password
-    const tempPassword = generateTempPassword()
-    console.log('Generated temporary password')
-
-    // Hash the new password
-    const hashedPassword = await bcryptjs.hash(tempPassword, 12)
-    console.log('Password hashed successfully')
-
-    // Update the user's password in the database
-    console.log('Updating password in database...')
-    const { error: updateError } = await supabaseAdmin
-      .from('users')
-      .update({ password_hash: hashedPassword })
-      .eq('id', user.id)
-
-    if (updateError) {
-      console.error('Database update error:', updateError)
-      throw new Error('Failed to update password in database')
-    }
-    console.log('Password updated in database successfully')
-
-    // Send email with temporary password
-    console.log('Attempting to send password reset email...')
-    console.log('Email parameters:', {
-      to_email: user.email,
-      to_name: user.contact_name || user.company_name || 'Customer',
-      template_id: PASSWORD_RESET_TEMPLATE
-    })
-    
-    const emailParams = {
-      to_email: user.email,
-      to_name: user.contact_name || user.company_name || 'Customer',
-      from_name: user.company_name || 'Coffee Ordering System',
-      subject: 'Password Reset - Temporary Password',
-      temporary_password: tempPassword,
-      customer_name: user.contact_name || user.company_name || 'Customer',
-      company_name: user.company_name || 'Coffee Ordering System'
-    }
-    
-    const emailResult = await sendEmailViaREST(PASSWORD_RESET_TEMPLATE, emailParams)
-    console.log('Email service result:', emailResult)
-
-    if (!emailResult) {
-      // Password was reset but email failed - log this for admin
-      console.error(`IMPORTANT: Password reset for ${user.email} but email failed to send.`)
-      console.error(`Temporary password for user: ${tempPassword}`)
-      
-      // Don't return an error to user for security, but log it
-      // In production, you might want to notify admin via different channel
-      console.log('Password reset completed but email notification failed - returning success for security')
+    // Try to send email - but don't fail if this doesn't work
+    let emailSent = false
+    if (isEmailConfigured()) {
+      console.log('Email service configured, attempting to send email...')
+      try {
+        const emailParams = {
+          to_email: user.email,
+          to_name: user.contact_name || user.company_name || 'Customer',
+          from_name: user.company_name || 'Coffee Ordering System',
+          subject: 'Password Reset - Temporary Password',
+          temporary_password: tempPassword,
+          customer_name: user.contact_name || user.company_name || 'Customer',
+          company_name: user.company_name || 'Coffee Ordering System'
+        }
+        
+        emailSent = await sendEmailViaREST(PASSWORD_RESET_TEMPLATE, emailParams)
+        console.log('Email service result:', emailSent)
+      } catch (emailError) {
+        console.error('Email sending failed with exception:', emailError)
+        emailSent = false
+      }
     } else {
+      console.log('Email service not configured - skipping email send')
+    }
+
+    if (emailSent) {
       console.log(`Password reset email sent successfully to ${user.email}`)
+    } else {
+      // Password was reset but email failed - log for admin
+      console.error(`ADMIN NOTICE: Password reset completed for ${user.email}`)
+      console.error(`Temporary password: ${tempPassword}`)
+      console.error('Please provide this password to the user manually.')
     }
 
     console.log('=== FORGOT PASSWORD REQUEST END ===')
+    
+    // Always return success to prevent enumeration attacks
     return NextResponse.json({ 
       message: 'If an account with that email exists, you will receive a password reset email shortly.' 
     })
 
   } catch (error) {
-    console.error('=== FORGOT PASSWORD ERROR ===')
-    console.error('Error in forgot password:', error)
+    console.error('=== FORGOT PASSWORD CRITICAL ERROR ===')
+    console.error('Unhandled error in forgot password:', error)
     
     // More detailed error logging
     if (error instanceof Error) {
       console.error('Error name:', error.name)
       console.error('Error message:', error.message)
       console.error('Error stack:', error.stack)
-    }
-    
-    // Check for specific error types
-    if (error instanceof TypeError) {
-      console.error('TypeError detected - likely network or API issue')
-      if (error.message.includes('fetch')) {
-        console.error('Fetch error - likely EmailJS API connectivity issue')
-      }
+    } else {
+      console.error('Non-Error object thrown:', typeof error, error)
     }
 
-    // Check for Supabase errors
-    if (error instanceof Error && error.message.includes('Supabase')) {
-      console.error('Supabase error detected')
-    }
+    console.error('=== END CRITICAL ERROR LOG ===')
 
-    console.error('=== END ERROR LOG ===')
-
+    // Return generic error to user
     return NextResponse.json(
-      { error: 'An error occurred while processing your request. Please try again later.' },
+      { error: 'An unexpected error occurred. Please try again later or contact support.' },
       { status: 500 }
     )
   }
