@@ -11,6 +11,7 @@ interface ReminderSettings {
   id: string
   dayOfWeek: number
   hour: number
+  timezone: string
   isActive: boolean
   emailEnabled: boolean
   smsEnabled: boolean
@@ -42,6 +43,17 @@ interface AdminUser {
 }
 
 const DAYS_OF_WEEK = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+
+const TIMEZONES = [
+  { value: 'America/Los_Angeles', label: 'Pacific Time (PT)' },
+  { value: 'America/Denver', label: 'Mountain Time (MT)' },
+  { value: 'America/Chicago', label: 'Central Time (CT)' },
+  { value: 'America/New_York', label: 'Eastern Time (ET)' },
+  { value: 'America/Phoenix', label: 'Arizona Time (MST)' },
+  { value: 'America/Anchorage', label: 'Alaska Time (AKST)' },
+  { value: 'Pacific/Honolulu', label: 'Hawaii Time (HST)' },
+  { value: 'UTC', label: 'UTC (Coordinated Universal Time)' }
+]
 
 export default function AdminSettingsPage() {
   const { data: session, status } = useSession()
@@ -456,6 +468,24 @@ export default function AdminSettingsPage() {
                     {Array.from({ length: 24 }, (_, i) => (
                       <option key={i} value={i}>
                         {i === 0 ? '12:00 AM' : i < 12 ? `${i}:00 AM` : i === 12 ? '12:00 PM' : `${i - 12}:00 PM`}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Timezone Selection */}
+                <div className="space-y-3">
+                  <label className="block text-sm font-medium text-coffee-dark">
+                    Time Zone
+                  </label>
+                  <select
+                    value={settings.timezone || 'America/Los_Angeles'}
+                    onChange={(e) => updateSettings('timezone', e.target.value)}
+                    className="w-full px-4 py-3 rounded-lg border border-coffee-light/30 focus:border-warm-gold focus:ring-2 focus:ring-warm-gold/20 transition-all duration-200 bg-white/50 backdrop-blur-sm"
+                  >
+                    {TIMEZONES.map((tz) => (
+                      <option key={tz.value} value={tz.value}>
+                        {tz.label}
                       </option>
                     ))}
                   </select>
@@ -1212,7 +1242,7 @@ export default function AdminSettingsPage() {
                     <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
                   </div>
                   <p className="text-xs text-coffee-dark/70">
-                    {settings ? `${DAYS_OF_WEEK[settings.dayOfWeek]} at ${settings.hour === 0 ? '12:00 AM' : settings.hour < 12 ? `${settings.hour}:00 AM` : settings.hour === 12 ? '12:00 PM' : `${settings.hour - 12}:00 PM`}` : 'Not configured'}
+                    {settings ? `${DAYS_OF_WEEK[settings.dayOfWeek]} at ${settings.hour === 0 ? '12:00 AM' : settings.hour < 12 ? `${settings.hour}:00 AM` : settings.hour === 12 ? '12:00 PM' : `${settings.hour - 12}:00 PM`} (${TIMEZONES.find(tz => tz.value === (settings.timezone || 'America/Los_Angeles'))?.label || 'Pacific Time'})` : 'Not configured'}
                   </p>
                 </div>
               </div>
