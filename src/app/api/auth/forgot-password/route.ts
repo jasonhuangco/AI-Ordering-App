@@ -31,7 +31,7 @@ async function sendEmailViaREST(templateId: string, params: any): Promise<boolea
       service_id: SERVICE_ID,
       template_id: templateId,
       user_id: PUBLIC_KEY,
-      accessToken: PRIVATE_KEY || undefined,
+      accessToken: PRIVATE_KEY,
       template_params: params
     }
     
@@ -205,6 +205,7 @@ export async function POST(request: NextRequest) {
       console.log('Email service configured, attempting to send email...')
       try {
         const emailParams = {
+          to: user.email,
           to_email: user.email,
           to_name: user.contact_name || user.company_name || 'Customer',
           from_name: user.company_name || 'Coffee Ordering System',
